@@ -1,115 +1,122 @@
---Version
-SIVer = "2.0"
-
 --Disable Terminate
+oldPullEvent = os.pullEvent
 os.pullEvent = os.pullEventRaw
 
+--Load boot config
+local loadBoot = fs.open(".preboot/cfg/.config", "r")
+local bootInfo = loadBoot.readAll()
+loadBoot.close()
+bootcfg = textutils.unserialise(bootInfo)
+
 --Load mvCore
-if fs.exists("disk/.preboot/mvCore") then
-	os.loadAPI("disk/.preboot/mvCore")
-else
-	error("Critical mvCore components are missing.")
+os.loadAPI(".preboot/mvCore")
+
+--ProShell validation
+function validateShell()
+	if not mvCore.validateHash(".preboot/Shell","9fc4584591faf78b0b242eee6fc6ffb4e67438c792ce80552f12b1e5fae98e1b") then
+		mvCore.fileError(".preboot/Shell","corrupt")
+	end
+end
+
+--mvSetup validation
+function validateSetup()
+	if not mvCore.validateHash(".preboot/mvSetup","3681f0fbfbd7a3c48a99abc07c4984d901113f9c0ebf68771e22c0694b6a328a") then
+		mvCore.fileError(".preboot/mvSetup","corrupt")
+	end
 end
 
 --Splash Screen
-mvCore.displayReset()
-mvCore.dPrint("Starting installer", "c", nil, 1, 16, 1, colours.black)
-sleep() --Doesn't like printing without this, don't know why
-
---Auto find hardware capabilities
-if term.isColour() then
-	if fs.exists("disk/.preboot/.hwinfocol") then
-		loadhwinfo = fs.open("disk/.preboot/.hwinfocol", "r")
-	else
-		mvCore.dPrint("Components are missing, reboot.", nil, nil, 2, 12, 1)
-	end
-else
-	if fs.exists("disk/.preboot/.hwinfo") then
-		loadhwinfo = fs.open("disk/.preboot/.hwinfo", "r")
-	else
-		mvCore.dPrint("Components are missing, reboot.", nil, nil, 2, 12, 1)
-	end
-end
-local hardwareInfo = loadhwinfo.readAll()
-loadhwinfo.close()
-hardware = textutils.unserialise(hardwareInfo)
-
---Hash check some core files
-if not mvCore.validateHash("disk/.preboot/Shell","b3fe68811ac55a1147e630b27c9d606b4fa0e25bd7442356d262e3c3a519d26d") then
-	mvCore.fileError(".preboot/Shell","corrupt")
-end
-
-function bootManager()
+function showSplash(showText)
 	mvCore.displayReset()
-	mvCore.dPrint("mvSoftware Installer "..SIVer, nil, nil, 2, 2, 1)
-	mvCore.dPrint("Hit the corrosponding keys to install", nil, nil, 2, 3, 1)
-	mvCore.dPrint("[1] - Base system (mvCore)", nil, nil, 2, 6, 1)
-	if hardware.capabilities.useColour == true then
-		mvCore.dPrint("[2] - mvOS graphical system", nil, nil, 2, 7, 1)
+	if term.isColour() then
+		if not pocket then
+			if fs.exists(".preboot/img/colsyslogo") then
+				if mvCore.validateHash(".preboot/img/colsyslogo", "4a95ac704bcfb72a392f3fb1f4c3594129d6e2e888906d09f52600d4acd033af") then
+					paintutils.drawImage(paintutils.loadImage(".preboot/img/colsyslogo"), 1, 1)
+					sleep()
+				else
+					mvCore.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+				end
+			else
+				mvCore.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+			end
+		else
+			mvCore.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+		end
 	else
-		mvCore.dPrint("[2] - (Incompatible)", nil, nil, 2, 7, 128)
+		if fs.exists(".preboot/img/bassyslogo") then
+			if mvCore.validateHash(".preboot/img/bassyslogo", "350aefb241a721184c403c12353bfee2fdc7df9d63eaca7a5b311a9d0c305d0d") then
+				paintutils.drawImage(paintutils.loadImage(".preboot/img/bassyslogo"), 1, 1)
+				sleep()
+			else
+				mvCore.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+			end
+		else
+			mvCore.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+		end
 	end
-	mvCore.dPrint("[3] - Base system development tools", nil, nil, 2, 8, 1)
-	mvCore.dPrint("Or", nil, nil, 2, 10, 1)
-	mvCore.dPrint("[4] - Launch mvCore ProShell", nil, nil, 2, 12, 1)
-	mvCore.dPrint("[5] - Boot from hard disk", nil, nil, 2, 13, 1)
-	mvCore.dPrint("Hit [END] to shut down", nil, nil, 2, 18, 1)
-	mvCore.dPrint(tostring(mvCore.copyright()), nil, nil, 2, 19, 128)
+	if showText == true then
+		if not pocket then
+			mvCore.dPrint("Hit [DEL] for Boot Menu", "c", nil, 1, 18, 128)
+		end
+	end
+end
+showSplash(true)
+
+--mvCore Boot Manager, where do you want to go today?
+local function bootManager()
+	mvCore.displayReset()
+	if pocket then
+		mvCore.dPrint("mvCore Boot Manager", nil, nil, 2, 2, 1)
+		mvCore.dPrint("[1] - Continue normally", nil, nil, 2, 5, 1)
+		mvCore.dPrint("[2] - Start ProShell", nil, nil, 2, 6, 1)
+		mvCore.dPrint("[END] - shut down", nil, nil, 2, 18, 1)
+		mvCore.dPrint(tostring(mvCore.copyright()), nil, nil, 2, 19, 128)
+	else
+		mvCore.dPrint("mvCore Boot Manager", nil, nil, 2, 2, 1)
+		mvCore.dPrint("[1] - Continue normally", nil, nil, 2, 5, 1)
+		mvCore.dPrint("[2] - Start mvCore ProShell", nil, nil, 2, 6, 1)
+		if term.isColour() then
+			mvCore.dPrint("[3] - Start mvCore Setup", nil, nil, 2, 7, 1)
+		end
+		mvCore.dPrint("Hit [END] to shut down", nil, nil, 2, 18, 1)
+		mvCore.dPrint(tostring(mvCore.copyright()), nil, nil, 2, 19, 128)
+	end
 	while true do
 	local event, param = os.pullEvent()
 		if event == "key" then
 			if param == mvCore.rawKeyMapper("1") then
-				mvCore.displayReset()
-					if fs.exists("disk/.install/instmvcore") then
-						shell.run("disk/.install/instmvcore")
+				if bootcfg.autoStartExtOS == true then
+					if fs.exists(bootcfg.extOSBootDir) then
+						shell.run(bootcfg.extOSBootDir)
 					else
-						mvCore.dPrint("Components are missing, reboot.", nil, nil, 2, 15, 1)
+						mvCore.displayReset()
 					end
+				end
+				shell.run(".preboot/shell")
 				os.shutdown()
 				break
 			elseif param == mvCore.rawKeyMapper("2") then
-				if hardware.capabilities.useColour == true then
-					mvCore.displayReset()
-					if fs.exists("disk/.install/instmvos") then
-						shell.run("disk/.install/instmvos")
-					else
-						mvCore.dPrint("Components are missing, reboot.", nil, nil, 2, 15, 1)
-					end
-					os.shutdown()
-					break
-				end
-			elseif param == mvCore.rawKeyMapper("3") then
-				mvCore.dPrint("Internal developer passphrase: ", nil, nil, 2, 10, 1)
-				sleep()
-				getPass = read('*')
-				if getPass == "twilight" then
-					mvCore.dPrint("-> Copying internal devtools", nil, nil, 2, 15, 1)
-					if fs.exists(".devtools") then
-						fs.delete(".devtools")
-						fs.copy("disk/.preboot/.internal",".devtools")
-					else
-						fs.copy("disk/.preboot/.internal",".devtools")
-					end
-					bootManager()
-					break
+				if pocket then
+					mvCore.dPrint("[2] - Loading ProShell...", nil, nil, 2, 6, colours.lightGrey)
 				else
-					mvCore.dPrint("Incorrect passphrase", nil, nil, 2, 15, 1)
-					sleep(1)
-					bootManager()
-					break
+					mvCore.dPrint("[2] - Loading mvCore ProShell...", nil, nil, 2, 6, colours.lightGrey)
 				end
-			elseif param == mvCore.rawKeyMapper("4") then
+				validateShell()
 				mvCore.displayReset()
 				sleep()
-				shell.run("disk/.preboot/shell")
+				shell.run(".preboot/shell")
 				os.shutdown()
 				break
-			elseif param == mvCore.rawKeyMapper("5") then
-				if fs.exists("startup") then
-					shell.run("startup")
-					break
-				else
-					os.reboot()
+			elseif param == mvCore.rawKeyMapper("3") then
+				if term.isColour() then
+					if not pocket then
+						mvCore.dPrint("[3] - Loading mvCore Setup...", nil, nil, 2, 7, colours.lightGrey)
+						validateSetup()
+						shell.run(".preboot/mvSetup")
+						os.shutdown()
+						break
+					end
 				end
 			elseif param == mvCore.rawKeyMapper("End") then
 				os.shutdown()
@@ -121,4 +128,28 @@ function bootManager()
 	end
 end
 
-bootManager()
+--Where everything real starts
+os.startTimer(1)
+while true do
+    local event, param = os.pullEvent()    
+    if event == "timer" then
+		showSplash(false)
+		validateShell()
+		validateSetup()
+		if bootcfg.autoStartExtOS == true then
+			if fs.exists(bootcfg.extOSBootDir) then
+				shell.run(bootcfg.extOSBootDir)
+			else
+				mvCore.displayReset()
+			end
+		end
+		shell.run(".preboot/shell")
+		os.shutdown()
+		break
+    elseif event == "key" then
+        if param == mvCore.rawKeyMapper("Delete") then
+            bootManager()
+			break
+		end
+    end
+end
