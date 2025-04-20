@@ -1,0 +1,16 @@
+{
+  platform = {
+    name = "Colour Computer",
+	id = "Dev1,2", --Device model 1, revision 2
+    type = 2,
+	minimumOS = "7",
+  },
+
+  capabilities = {
+	textMode = true,
+	useColour = true,
+	useMouse = true,
+	useCommands = false,
+	mobileWireless = false,
+  },
+}

@@ -1,0 +1,13 @@
+{
+  appData = {
+    appName = "NetApps",
+    appVersion = "1.1",
+    appBuild = "20210826",
+    appDeveloper = "mvSoftware",
+  },
+
+  uiData = {
+	appNameColour = "colours.red",
+	appNameColourDark = "colours.red",
+  },
+}

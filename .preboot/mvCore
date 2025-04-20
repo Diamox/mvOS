@@ -1,0 +1,922 @@
+---Version Functions
+--Call this function to display the mvCore verion number
+function version()
+   return "1.0.0"
+end
+
+--Call this function to display the mvCore build number
+function build()
+   return "20210120"
+end
+
+--Call this function to display the mvCore codename
+function codename()
+   return "Alkaline"
+end
+
+--Call this function to display the mvCore release date
+function releaseDate()
+   return "09/08/2020"
+end
+
+--Call this function to display the mvCore copyright information
+function copyright()
+   return "\169 mvSoftware 2021"
+end
+
+---Text Functions
+--Call this function to fully reset the display, foreground will default to white and background to black if colours aren't specified
+function displayReset(fcolour, bcolour)
+   colourChecker(fcolour, bcolour)
+   term.setCursorPos(1, 1)
+   term.clear()
+   return true
+end
+
+--This function will print text which is center aligned on the defined line, can only be called through dPrint() with the c modifier
+local function cPrint(text, yp)
+   x, y = term.getSize()
+   cx = math.ceil((x/2)-(string.len(text)/2))
+   if yp == nil then
+      x2, y2 = term.getCursorPos()
+      term.setCursorPos(cx, y2)
+      write(text)
+   else
+      term.setCursorPos(cx, yp)
+      write(text)
+   end
+ return true
+end
+
+--This function will slow print text which is center aligned on the defined line, can only be called through dPrint() with the cs modifier
+local function cSlowPrint(text, text2, yp)
+   x, y = term.getSize()
+   cx = math.ceil((x/2)-(string.len(text)/2))
+   if yp == nil then
+   x2, y2 = term.getCursorPos()
+   term.setCursorPos(cx, y2)
+   if text2 == nil then
+      textutils.slowWrite(text)
+   else
+      textutils.slowWrite(text,text2)
+   end
+   else
+      term.setCursorPos(cx, yp)
+   if text2 == nil then
+      textutils.slowWrite(text)
+   else
+      textutils.slowWrite(text,text2)
+   end
+   end
+   return true
+end
+
+--This function allows you to declare extra paramaters when printing text
+function dPrint(text, modifier, speed, xloc, yloc, fcolour, bcolour)
+    colourChecker(fcolour, bcolour)
+    if xloc > 51 or xloc < 0 then mainError("MVSOFTWARE_MVCORE", "DPRINT_XLOC_OUTOFBOUNDS") end
+    if yloc > 19 or yloc < 0 then mainError("MVSOFTWARE_MVCORE", "DPRINT_YLOC_OUTOFBOUNDS") end
+    if modifier == nil then
+         term.setCursorPos(xloc, yloc)
+         write(text)
+      elseif modifier == "c" or modifier == "center" then
+         cPrint(text, yloc)
+      elseif modifier == "s" or modifer == "slow" then
+         term.setCursorPos(xloc, yloc)
+         textutils.slowWrite(text, speed)
+      elseif modifier == "cs" or modifier == "centerslow" then
+         cSlowPrint(text, speed, yloc)
+      elseif modifier == "p" or modifier == "print" then
+        term.setCursorPos(xloc, yloc)
+        print(text)
+      else
+         mainError("MVSOFTWARE_MVCORE", "DPRINT_INVALID_MODIFIER")
+   end  
+end
+
+---UI Functions
+--This function will throw an mvCore Software Error Screen
+function mainError(pe, sc)
+   displayReset(colours.white, colours.blue)
+   dPrint("mvCore has shut down because of a critical error.", nil, nil, 1, 1, colours.white, colours.blue)
+   dPrint("If you are seeing this error for the first time, please reboot the system", nil, nil, 1, 3, colours.white, colours.blue)
+   dPrint("If the issue persists after rebooting, please try updating or the app which is causing the issue", nil, nil, 1, 6, colours.white, colours.blue)
+   dPrint("If the issue still occurs after those steps, please submit a bug report with the PROGRAM ERROR and STOP CODE strings attached", nil, nil, 1, 9, colours.white, colours.blue)
+   dPrint("Technical Information", nil, nil, 1, 13, colours.white, colours.blue)
+   if pe then
+      dPrint("PROGRAM ERROR: "..string.upper(pe), nil, nil, 1, 14, colours.white, colours.blue)
+   else
+      dPrint("PROGRAM ERROR: UNKNOWN", nil, nil, 1, 14, colours.white, colours.blue)
+   end
+   if sc then
+      dPrint("STOP CODE: "..string.upper(sc), nil, nil, 1, 15, colours.white, colours.blue)
+   else
+      dPrint("STOP CODE: UNKNOWN", nil, nil, 1, 15, colours.white, colours.blue)
+   end
+
+    sleep(5)
+    dPrint("System will reboot in 5 seconds", nil, nil, 1, 19, colours.white, colours.blue)
+    sleep(1)
+    dPrint("System will reboot in 4 seconds", nil, nil, 1, 19, colours.white, colours.blue)
+    sleep(1)
+    dPrint("System will reboot in 3 seconds", nil, nil, 1, 19, colours.white, colours.blue)
+    sleep(1)
+    dPrint("System will reboot in 2 seconds", nil, nil, 1, 19, colours.white, colours.blue)
+    sleep(1)
+    dPrint("System will reboot in 1 second ", nil, nil, 1, 19, colours.white, colours.blue)
+    sleep(1)
+    os.reboot()
+end
+
+--This function will display an error screen relating to missing or corrupt files
+function fileError(fd, et)
+   displayReset(colours.white, colours.red)
+   dPrint("mvCore could not start because of a missing or corrupt file.", nil, nil, 1, 1, colours.white, colours.red)
+   dPrint("If you are seeing this error for the first time, please reboot the system. If the issue persists you will need to repair, update or reinstall the OS", nil, nil, 1, 4, colours.white, colours.red)
+   dPrint("If the issue continues after those steps, please submit a bug report with the effected file and error type attached", nil, nil, 1, 8, colours.white, colours.red)
+   dPrint("Technical Information", nil, nil, 1, 12, colours.white, colours.red)
+   if fd then
+      dPrint("FILE DIRECTORY: "..string.upper(fd), nil, nil, 1, 13, colours.white, colours.red)
+   else
+      mainError("MVSOFTWARE_MVCORE", "FILEERROR_FILE_NOTSPECIFIED")
+   end
+
+   if et == "missing" or et == "m" then
+      dPrint("ERROR TYPE: FILE_NOT_FOUND", nil, nil, 1, 14, colours.white, colours.red)
+   elseif et == "corrupt" or et == "c" then
+      dPrint("ERROR TYPE: FILE_VALIDATION_FAILED", nil, nil, 1, 14, colours.white, colours.red)
+   else
+      mainError("MVSOFTWARE_MVCORE", "FILEERROR_TYPE_NOTSPECIFIED")
+   end
+
+   dPrint("Hold Ctrl+R to reboot the system", nil, nil, 1, 19, colours.white, colours.red)
+   hangMachine()
+end
+
+--Basic UI Functions
+function basicUI(config,drawBG)
+   local loadSettings = fs.open(".system/desktop/settings", "r")
+   local settingsData = loadSettings.readAll()
+   loadSettings.close()
+
+   local settingsTable = textutils.unserialise(settingsData)
+   
+   local loadConfig = fs.open(config, "r")
+   local configData = loadConfig.readAll()
+   loadConfig.close()
+
+   local configTable = textutils.unserialise(configData)
+
+   if settingsTable.isDarkMode == false then
+      if drawBG == false then
+         --Do Nothing
+      else
+         paintutils.drawFilledBox(1, 1, 51, 19, colours.white)
+      end
+      dPrint("x", nil, nil, 50, 1, colours.black, colours.white)
+      dPrint(configTable.appData.appName, nil, nil, 2, 1, colourChecker(configTable.uiData.appNameColour), 1)
+   elseif settingsTable.isDarkMode == true then
+      if drawBG == false then
+         --Do Nothing
+      else
+         paintutils.drawFilledBox(1, 1, 51, 19, colours.black)
+      end
+      dPrint("x", nil, nil, 50, 1, colours.lightGrey, colours.black)
+      dPrint(configTable.appData.appName, nil, nil, 2, 1, colourChecker(configTable.uiData.appNameColourDark), colours.black)
+   else
+      mainError("MVSOFTWARE_MVCORE", "SETTINGS_DARKMODE_INVALIDSTATE")
+   end
+end
+
+--Tabbed UI Functions
+function tabbedUI(config, tabhighlight)
+   local loadSettings = fs.open(".system/desktop/settings", "r")
+   local settingsData = loadSettings.readAll()
+   loadSettings.close()
+
+   local settingsTable = textutils.unserialise(settingsData)
+   
+   local loadConfig = fs.open(config, "r")
+   local configData = loadConfig.readAll()
+   loadConfig.close()
+
+   local configTable = textutils.unserialise(configData)
+
+   if settingsTable.isDarkMode == false then
+      paintutils.drawFilledBox(16, 1, 51, 19, colours.white)
+      paintutils.drawFilledBox(1, 1, 15, 19, colourChecker(configTable.uiData.sidebarColour))
+      dPrint("x", nil, nil, 50, 1, colours.black, colours.white)
+      dPrint(configTable.appData.appName, nil, nil, 2, 1, colourChecker(configTable.uiData.appNameColour), colourChecker(configTable.uiData.sidebarColour))
+      if configTable.tabData.tab1 then dPrint(configTable.tabData.tab1, nil, nil, 2, 4, colourChecker(configTable.uiData.sidebarTextColour), colourChecker(configTable.uiData.sidebarColour)) end
+      if configTable.tabData.tab2 then dPrint(configTable.tabData.tab2, nil, nil, 2, 7, colourChecker(configTable.uiData.sidebarTextColour), colourChecker(configTable.uiData.sidebarColour)) end
+      if configTable.tabData.tab3 then dPrint(configTable.tabData.tab3, nil, nil, 2, 10, colourChecker(configTable.uiData.sidebarTextColour), colourChecker(configTable.uiData.sidebarColour)) end
+      if configTable.tabData.tab4 then dPrint(configTable.tabData.tab4, nil, nil, 2, 13, colourChecker(configTable.uiData.sidebarTextColour), colourChecker(configTable.uiData.sidebarColour)) end
+      if configTable.tabData.tab5 then dPrint(configTable.tabData.tab5, nil, nil, 2, 16, colourChecker(configTable.uiData.sidebarTextColour), colourChecker(configTable.uiData.sidebarColour)) end
+   elseif settingsTable.isDarkMode == true then
+      paintutils.drawFilledBox(16, 1, 51, 19, colours.black)
+      paintutils.drawFilledBox(1, 1, 15, 19, colourChecker(configTable.uiData.sidebarColourDark))
+      dPrint("x", nil, nil, 50, 1, colours.lightGrey, colours.black)
+      dPrint(configTable.appData.appName, nil, nil, 2, 1, colourChecker(configTable.uiData.appNameColourDark), colourChecker(configTable.uiData.sidebarColourDark))
+      if configTable.tabData.tab1 then dPrint(configTable.tabData.tab1, nil, nil, 2, 4, colourChecker(configTable.uiData.sidebarTextColourDark), colourChecker(configTable.uiData.sidebarColourDark)) end
+      if configTable.tabData.tab2 then dPrint(configTable.tabData.tab2, nil, nil, 2, 7, colourChecker(configTable.uiData.sidebarTextColourDark), colourChecker(configTable.uiData.sidebarColourDark)) end
+      if configTable.tabData.tab3 then dPrint(configTable.tabData.tab3, nil, nil, 2, 10, colourChecker(configTable.uiData.sidebarTextColourDark), colourChecker(configTable.uiData.sidebarColourDark)) end
+      if configTable.tabData.tab4 then dPrint(configTable.tabData.tab4, nil, nil, 2, 13, colourChecker(configTable.uiData.sidebarTextColourDark), colourChecker(configTable.uiData.sidebarColourDark)) end
+      if configTable.tabData.tab5 then dPrint(configTable.tabData.tab5, nil, nil, 2, 16, colourChecker(configTable.uiData.sidebarTextColourDark), colourChecker(configTable.uiData.sidebarColourDark)) end
+   else
+      mainError("MVSOFTWARE_MVCORE", "SETTINGS_DARKMODE_INVALIDSTATE")
+   end
+
+   --Handle Highlighting Tabs
+   if tabhighlight == 1 then
+      if settingsTable.isDarkMode == false then dPrint(configTable.tabData.tab1, nil, nil, 2, 4, colourChecker(configTable.uiData.sidebarTextColourHighlight), colourChecker(configTable.uiData.sidebarColour))
+      elseif settingsTable.isDarkMode == true then dPrint(configTable.tabData.tab1, nil, nil, 2, 4, colourChecker(configTable.uiData.sidebarTextColourDarkHighlight), colourChecker(configTable.uiData.sidebarColourDark))
+      else mainError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+   elseif tabhighlight == 2 then
+      if settingsTable.isDarkMode == false then dPrint(configTable.tabData.tab2, nil, nil, 2, 7, colourChecker(configTable.uiData.sidebarTextColourHighlight), colourChecker(configTable.uiData.sidebarColour))
+      elseif settingsTable.isDarkMode == true then dPrint(configTable.tabData.tab2, nil, nil, 2, 7, colourChecker(configTable.uiData.sidebarTextColourDarkHighlight), colourChecker(configTable.uiData.sidebarColourDark))
+      else mainError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+   elseif tabhighlight == 3 then
+      if settingsTable.isDarkMode == false then dPrint(configTable.tabData.tab3, nil, nil, 2, 10, colourChecker(configTable.uiData.sidebarTextColourHighlight), colourChecker(configTable.uiData.sidebarColour))
+      elseif settingsTable.isDarkMode == true then dPrint(configTable.tabData.tab3, nil, nil, 2, 10, colourChecker(configTable.uiData.sidebarTextColourDarkHighlight), colourChecker(configTable.uiData.sidebarColourDark))
+      else mainError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+   elseif tabhighlight == 4 then
+      if settingsTable.isDarkMode == false then dPrint(configTable.tabData.tab4, nil, nil, 2, 13, colourChecker(configTable.uiData.sidebarTextColourHighlight), colourChecker(configTable.uiData.sidebarColour))
+      elseif settingsTable.isDarkMode == true then dPrint(configTable.tabData.tab4, nil, nil, 2, 13, colourChecker(configTable.uiData.sidebarTextColourDarkHighlight), colourChecker(configTable.uiData.sidebarColourDark))
+      else mainError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+   elseif tabhighlight == 5 then
+      if settingsTable.isDarkMode == false then dPrint(configTable.tabData.tab5, nil, nil, 2, 16, colourChecker(configTable.uiData.sidebarTextColourHighlight), colourChecker(configTable.uiData.sidebarColour))
+      elseif settingsTable.isDarkMode == true then dPrint(configTable.tabData.tab5, nil, nil, 2, 16, colourChecker(configTable.uiData.sidebarTextColourDarkHighlight), colourChecker(configTable.uiData.sidebarColourDark))
+      else mainError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+   else
+      mainError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE")
+   end
+end
+
+---Hardware Functions
+--Hangs the machine for use in error screens
+function hangMachine()
+   while true do
+      event, char, X, Y = os.pullEventRaw()
+         if event == "terminate" or event == "error" then
+            --Hang
+         end
+   end
+end
+
+--Get the free space on disk and auto converts to MB/KB/B
+function remainingSpace(dir)
+   if dir then
+      if fs.exists(dir) then
+         if fs.getFreeSpace(dir) >= 1000*1000 then
+            return ((math.floor(fs.getFreeSpace(dir)/(100*1000))/10).."MB")
+         elseif fs.getFreeSpace(dir) >= 1000 then
+           return ((math.floor(fs.getFreeSpace(dir)/100)/10).."KB")
+         else
+            return (fs.getFreeSpace(dir).."B")
+         end
+      else
+         mainError("MVSOFTWARE_MVCORE", "REMAININGSPACE_DIR_NOTFOUND")
+      end
+   else
+      mainError("MVSOFTWARE_MVCORE", "REMAININGSPACE_DIR_NOTSPECIFIED")
+   end
+end
+
+--Enables or disables a rednet moden
+function rednetInit(bool)
+	x, y = term.getSize()
+	for n,side in ipairs(rs.getSides()) do
+		if peripheral.getType(side) == "modem" then
+			if bool == true then
+               rednet.open(side)
+               return true
+			elseif bool == false then
+               rednet.close(side)
+               return true
+			else
+               mainError("MVSOFTWARE_MVCORE","REDNET_INIT_ERROR")
+			end
+		break
+		end
+	end
+end
+
+--Interact with external hardware
+function diskIsPresent()
+	for _, side in ipairs(rs.getSides()) do
+		if peripheral.isPresent(side) and peripheral.getType(side) == "drive" then
+			if disk.isPresent(side) then
+				return true
+			else
+				return false
+			end
+			break
+		end
+	end
+end
+
+function diskGetSide()
+	for _, side in ipairs(rs.getSides()) do
+		if peripheral.isPresent(side) and peripheral.getType(side) == "drive" then
+			if disk.isPresent(side) then
+				return side
+			else
+				return false
+			end
+			break
+		end
+	end
+end
+
+function diskHasData()
+	for _, side in ipairs(rs.getSides()) do
+		if peripheral.isPresent(side) and peripheral.getType(side) == "drive" then
+			if disk.hasData(side) then
+				return true
+			else
+				return false
+			end
+			break
+		end
+	end
+end
+
+function diskHasAudio()
+	for _, side in ipairs(rs.getSides()) do
+		if peripheral.isPresent(side) and peripheral.getType(side) == "drive" then
+			if disk.hasAudio(side) then
+				return true
+			else
+				return false
+			end
+			break
+		end
+	end
+end
+
+function printerHasInk()
+	local printer = peripheral.find("printer")
+	if printer then
+		if printer.getInkLevel() == 0 then
+			return false
+		else
+			return true
+		end
+	else
+		return false
+	end
+end
+
+function printerHasPaper()
+	local printer = peripheral.find("printer")
+	if printer then
+		if printer.getPaperLevel() == 0 then
+			return false
+		else
+			return true
+		end
+	else
+		return false
+	end
+end
+
+---Networking Functions
+--Credit to Diamox for the file sharing functions
+--Call this function to send a given file
+function sendFile(receiverID, text, text2)
+	if receiverID == nil then
+		mainError("MVSOFTWARE_MVCORE", "SENDFILE_RECIEVERID_NIL")
+		return false
+	else
+		if fs.exists(text) then
+			openFile = fs.open(text,"r")
+			fileContents = openFile.readAll()
+			openFile.close()
+			if text2 == nil then
+				error("MVSOFTWARE_MVCORE", "SENDFILE_PROTOCOL_INVALID")
+				return false
+			else
+				rednet.send(receiverID, fileContents, text2)
+				return true
+			end
+		else
+			mainError("MVSOFTWARE_MVCORE", "SENDFILE_FILE_NOTFOUND")
+			return false
+		end
+	end
+end
+
+--Call this function to recieve a file
+function receiveFile(text, text2)
+	if text == nil then
+		mainError("MVSOFTWARE_MVCORE", "RECEIVEFILE_SENDERID_NIL")
+		return false
+	else
+		if text2 == nil then
+			mainError("MVSOFTWARE_MVCORE", "RECEIVEFILE_PROTOCOL_INVALID")
+			return false
+		else
+			senderID, message, protocol = rednet.receive(text2)
+			if fs.exists(text) then
+				fs.delete(text)
+			end
+			writeFile = fs.open(text,"w")
+			writeFile.write(message)
+			writeFile.close()
+			return true
+		end
+	end
+end
+
+---Raw Key Mapper
+--This function maps Computercraft Scan Codes onto easy to use names for use in os.pullEvent("key")
+function rawKeyMapper(key)
+   if key == ESCKey then return 1
+   elseif key == "F1Key" or key == "F1" then return 59
+   elseif key == "F2Key" or key == "F2" then return 60
+   elseif key == "F3Key" or key == "F3" then return 61
+   elseif key == "F4Key" or key == "F4" then return 62
+   elseif key == "F5Key" or key == "F5" then return 63
+   elseif key == "F6Key" or key == "F6" then return 64
+   elseif key == "F7Key" or key == "F7" then return 65
+   elseif key == "F8Key" or key == "F8" then return 66
+   elseif key == "F9Key" or key == "F9" then return 67
+   elseif key == "F10Key" or key == "F10" then return 68
+   elseif key == "F11Key" or key == "F11" then return 87
+   elseif key == "F12Key" or key == "F12" then return 88
+   elseif key == "PrntScrn" then return 183
+   elseif key == "ScrLock" then return 70
+   elseif key == "Pause" then return 197
+   elseif key == "Tilde" then return 41
+   elseif key == "NumRow1" or key == "1" then return 2
+   elseif key == "NumRow2" or key == "2" then return 3
+   elseif key == "NumRow3" or key == "3" then return 4
+   elseif key == "NumRow4" or key == "4" then return 5
+   elseif key == "NumRow5" or key == "5" then return 6
+   elseif key == "NumRow6" or key == "6" then return 7
+   elseif key == "NumRow7" or key == "7" then return 8
+   elseif key == "NumRow8" or key == "8" then return 9
+   elseif key == "NumRow9" or key == "9" then return 10
+   elseif key == "NumRow0" or key == "0" then return 11
+   elseif key == "NumRowMinus" or key == "-" then return 12
+   elseif key == "NumRowEquals" or key == "=" then return 13
+   elseif key == "Backspace" then return 14
+   elseif key == "Insert" then return 210
+   elseif key == "Home" then return 199
+   elseif key == "PageUp" then return 201
+   elseif key == "NumLock" then return 69
+   elseif key == "NumPadSlash" then return 181
+   elseif key == "NumPadMultiply" then return 55
+   elseif key == "NumPadMinus" then return 74
+   elseif key == "Tab" then return 15
+   elseif key == "QKey" or key == "Q" then return 16
+   elseif key == "WKey" or key == "W" then return 17
+   elseif key == "EKey" or key == "E" then return 18
+   elseif key == "RKey" or key == "R" then return 19
+   elseif key == "TKey" or key == "T" then return 20
+   elseif key == "YKey" or key == "Y" then return 21
+   elseif key == "UKey" or key == "U" then return 22
+   elseif key == "IKey" or key == "I" then return 23
+   elseif key == "OKey" or key == "O" then return 24
+   elseif key == "PKey" or key == "P" then return 25
+   elseif key == "LeftSquareBracket" then return 26
+   elseif key == "RightSquareBracket" then return 27
+   elseif key == "Backslash" then return 43
+   elseif key == "Delete" then return 211
+   elseif key == "End" then return 207
+   elseif key == "PageDown" then return 209
+   elseif key == "NumPad7" then return 71
+   elseif key == "NumPad8" then return 72
+   elseif key == "NumPad9" then return 73
+   elseif key == "NumPadPlus" then return 78
+   elseif key == "CapsLock" then return 58
+   elseif key == "AKey" or key == "A" then return 30
+   elseif key == "SKey" or key == "S" then return 31
+   elseif key == "DKey" or key == "D" then return 32
+   elseif key == "FKey" or key == "F" then return 33
+   elseif key == "GKey" or key == "G" then return 34
+   elseif key == "HKey" or key == "H" then return 35
+   elseif key == "JKey" or key == "J" then return 36
+   elseif key == "KKey" or key == "K" then return 37
+   elseif key == "LKey" or key == "L" then return 38
+   elseif key == "SemiColon" then return 39
+   elseif key == "Apostrophe" then return 40
+   elseif key == "Enter" or key == "Return" then return 28
+   elseif key == "NumPad4" then return 75
+   elseif key == "NumPad5" then return 76
+   elseif key == "NumPad6" then return 77
+   elseif key == "LShift" then return 42
+   elseif key == "ZKey" or key == "Z" then return 44
+   elseif key == "XKey" or key == "X" then return 45
+   elseif key == "CKey" or key == "C" then return 46
+   elseif key == "VKey" or key == "V" then return 47
+   elseif key == "BKey" or key == "B" then return 48
+   elseif key == "NKey" or key == "N" then return 49
+   elseif key == "MKey" or key == "M" then return 50
+   elseif key == "Comma" then return 51
+   elseif key == "Period" then return 52
+   elseif key == "Slash" then return 53
+   elseif key == "RShift" then return 54
+   elseif key == "UArrow" then return 200
+   elseif key == "NumPad1" then return 79
+   elseif key == "NumPad2" then return 80
+   elseif key == "NumPad3" then return 81
+   elseif key == "LCtrl" then return 29
+   elseif key == "LSuper" then return 219
+   elseif key == "LAlt" then return 56
+   elseif key == "Space" then return 57
+   elseif key == "RAlt" then return 184
+   elseif key == "RSuper" then return 220
+   elseif key == "Menu" then return 220
+   elseif key == "RCtrl" then return 157
+   elseif key == "LArrow" then return 203
+   elseif key == "DArrow" then return 208
+   elseif key == "RArrow" then return 205
+   elseif key == "NumPad0" then return 82
+   elseif key == "NumPadPeriod" then return 83
+   else mainError("MVSOFTWARE_MVCORE","RKM_INVALID_KEY")
+   end
+end
+
+
+---Colour Checker
+--Checks for vaild colours, throws an error if colour is invalid. Also has special checks to parse colours from application config files
+function colourChecker(fcolour, bcolour)
+   if fcolour == nil then
+      term.setTextColour(colours.white)
+   elseif fcolour == colours.white or fcolour == colours.white or fcolour == 1 then
+      term.setTextColour(colours.white)
+   elseif fcolour == "colours.white" or fcolour == "colors.white" or fcolour == "1" then
+      return colours.white
+   elseif fcolour == colours.orange or fcolour == colors.orange or fcolour == 2 then
+      term.setTextColour(colours.orange)
+   elseif fcolour == "colours.orange" or fcolour == "colors.orange" or fcolour == "2" then
+      return colours.orange
+   elseif fcolour == colours.magenta or fcolour == colors.magenta or fcolour == 4 then
+      term.setTextColour(colours.magenta)
+   elseif fcolour == "colours.magenta" or fcolour == "colors.magenta" or fcolour == "4" then
+      return colours.magenta
+   elseif fcolour == colours.lightBlue or fcolour == colors.lightBlue or fcolour == 8 then
+      term.setTextColour(colours.lightBlue)
+   elseif fcolour == "colours.lightBlue" or fcolour == "colors.lightBlue" or fcolour == "8" then
+      return colours.lightBlue
+   elseif fcolour == colours.yellow or fcolour == colors.yellow or fcolour == 16 then
+      term.setTextColour(colours.yellow)
+   elseif fcolour == "colours.yellow" or fcolour == "colors.yellow" or fcolour == "16" then
+      return colours.yellow
+   elseif fcolour == colours.lime or fcolour == colors.lime or fcolour == 32 then
+      term.setTextColour(colours.lime)
+   elseif fcolour == "colours.lime" or fcolour == "colors.lime" or fcolour == "32" then
+      return colours.lime
+   elseif fcolour == colours.pink or fcolour == colors.pink or fcolour == 64 then
+      term.setTextColour(colours.pink)
+   elseif fcolour == "colours.pink" or fcolour == "colors.pink" or fcolour == "64" then
+      return colours.pink
+   elseif fcolour == colours.grey or fcolour == colors.gray or fcolour == 128 then
+      term.setTextColour(colours.grey)
+   elseif fcolour == "colours.grey" or fcolour == colors.gray or fcolour == "128" then
+      return colours.grey
+   elseif fcolour == colours.lightGrey or fcolour == colors.lightGray or fcolour == 256 then
+      term.setTextColour(colours.lightGrey)
+   elseif fcolour == "colours.lightGrey" or fcolour == "colors.lightGray" or fcolour == "256" then
+      return colours.lightGrey
+   elseif fcolour == colours.cyan or fcolour == colors.cyan or fcolour == 512 then
+      term.setTextColour(colours.cyan)
+   elseif fcolour == "colours.cyan" or fcolour == "colors.cyan" or fcolour == "512" then
+      return colours.cyan
+   elseif fcolour == colours.purple or fcolour == colors.purple or fcolour == 1024 then
+      term.setTextColour(colours.purple)
+   elseif fcolour == "colourspurple" or fcolour == "colors.purple" or fcolour == "1024" then
+      return colours.purple
+   elseif fcolour == colours.blue or fcolour == colors.blue or fcolour == 2048 then
+      term.setTextColour(colours.blue)
+   elseif fcolour == "colours.blue" or fcolour == "colors.blue" or fcolour == "2048" then
+      return colours.blue
+   elseif fcolour == colours.brown or fcolour == colors.brown or fcolour == 4096 then
+      term.setTextColour(colours.brown)
+   elseif fcolour == "colours.brown" or fcolour == "colors.brown" or fcolour == "4096" then
+      return colours.brown
+   elseif fcolour == colours.green or fcolour == colors.green or fcolour == 8192 then
+      term.setTextColour(colours.green)
+   elseif fcolour == "colours.green" or fcolour == "colors.green" or fcolour == "8192" then
+      return colours.green
+   elseif fcolour == colours.red or fcolour == colors.red or fcolour == 16384 then
+      term.setTextColour(colours.red)
+   elseif fcolour == "colours.red" or fcolour == "colors.red" or fcolour == "16384" then
+      return colours.red
+   elseif fcolour == colours.black or fcolour == colors.black or fcolour == 32768 then
+      term.setTextColour(colours.black)
+   elseif fcolour == "colours.black" or fcolour == "colors.black" or fcolour == "32768" then
+      return colours.black
+   else
+      mainError("MVSOFTWARE_MVCORE", "COLOURCHECKER_INVALID_FCOLOUR")
+   end
+   
+   if bcolour == nil then
+      term.setBackgroundColour(colours.black)
+   elseif bcolour == colours.white or bcolour == colours.white or bcolour == 1 then
+      term.setBackgroundColour(colours.white)
+   elseif bcolour == "colours.white" or bcolour == "colors.white" or bcolour == "1" then
+      return colours.white
+   elseif bcolour == colours.orange or bcolour == colors.orange or bcolour == 2 then
+      term.setBackgroundColour(colours.orange)
+   elseif bcolour == "colours.orange" or bcolour == "colors.orange" or bcolour == "2" then
+      return colours.orange
+   elseif bcolour == colours.magenta or bcolour == colors.magenta or bcolour == 4 then
+      term.setBackgroundColour(colours.magenta)
+   elseif bcolour == "colours.magenta" or bcolour == "colors.magenta" or bcolour == "4" then
+      return colours.magenta
+   elseif bcolour == colours.lightBlue or bcolour == colors.lightBlue or bcolour == 8 then
+      term.setBackgroundColour(colours.lightBlue)
+   elseif bcolour == "colours.lightBlue" or bcolour == "colors.lightBlue" or bcolour == "8" then
+      return colours.lightBlue
+   elseif bcolour == colours.yellow or bcolour == colors.yellow or bcolour == 16 then
+      term.setBackgroundColour(colours.yellow)
+   elseif bcolour == "colours.yellow" or bcolour == "colors.yellow" or bcolour == "16" then
+      return colours.yellow
+   elseif bcolour == colours.lime or bcolour == colors.lime or bcolour == 32 then
+      term.setBackgroundColour(colours.lime)
+   elseif bcolour == "colours.lime" or bcolour == "colors.lime" or bcolour == "32" then
+      return colours.lime
+   elseif bcolour == colours.pink or bcolour == colors.pink or bcolour == 64 then
+      term.setBackgroundColour(colours.pink)
+   elseif bcolour == "colours.pink" or bcolour == "colors.pink" or bcolour == "64" then
+      return colours.pink
+   elseif bcolour == colours.grey or bcolour == colors.gray or bcolour == 128 then
+      term.setBackgroundColour(colours.grey)
+   elseif bcolour == "colours.grey" or bcolour == "colors.gray" or bcolour == "128" then
+      return colours.grey
+   elseif bcolour == colours.lightGrey or bcolour == colors.lightGray or bcolour == 256 then
+      term.setBackgroundColour(colours.lightGrey)
+   elseif bcolour == "colours.lightGrey" or bcolour == "colors.lightGray" or bcolour == "256" then
+      return colours.lightGrey
+   elseif bcolour == colours.cyan or bcolour == colors.cyan or bcolour == 512 then
+      term.setBackgroundColour(colours.cyan)
+   elseif bcolour == "colours.cyan" or bcolour == "colors.cyan" or bcolour == "512" then
+      return colours.cyan
+   elseif bcolour == colours.purple or bcolour == colors.purple or bcolour == 1024 then
+      term.setBackgroundColour(colours.purple)
+   elseif bcolour == "colours.purple" or bcolour == "colors.purple" or bcolour == "1024" then
+      return colours.purple
+   elseif bcolour == colours.blue or bcolour == colors.blue or bcolour == 2048 then
+      term.setBackgroundColour(colours.blue)
+   elseif bcolour == "colours.blue" or bcolour == "colors.blue" or bcolour == "2048" then
+      return colours.blue
+   elseif bcolour == colours.brown or bcolour == colors.brown or bcolour == 4096 then
+      term.setBackgroundColour(colours.brown)
+   elseif bcolour == "colours.brown" or bcolour == "colors.brown" or bcolour == "4096" then
+      return colours.brown
+   elseif bcolour == colours.green or bcolour == colors.green or bcolour == 8192 then
+      term.setBackgroundColour(colours.green)
+   elseif bcolour == "colours.green" or bcolour == "colors.green" or bcolour == "8192" then
+      return colours.green
+   elseif bcolour == colours.red or bcolour == colors.red or bcolour == 16384 then
+      term.setBackgroundColour(colours.red)
+   elseif bcolour == "colours.red" or bcolour == "colors.red" or bcolour == "16384" then
+      return colours.red
+   elseif bcolour == colours.black or bcolour == colors.black or bcolour == 32768 then
+      term.setBackgroundColour(colours.black)
+   elseif bcolour == "colours.black" or bcolour == "colors.black" or bcolour == "32768" then
+      return colours.black
+   else
+      mainError("MVSOFTWARE_MVCORE", "COLOURCHECKER_INVALID_BCOLOUR")
+   end
+end
+
+---File Hash Functions
+--Credit to GravityScore for the SHA256 hashing functions
+
+local MOD = 2^32
+local MODM = MOD-1
+ 
+local function memoize(f)
+   local mt = {}
+   local t = setmetatable({}, mt)
+   function mt:__index(k)
+      local v = f(k)
+      t[k] = v
+      return v
+   end
+        return t
+end
+ 
+local function make_bitop_uncached(t, m)
+   local function bitop(a, b)
+      local res,p = 0,1
+         while a ~= 0 and b ~= 0 do
+         local am, bm = a % m, b % m
+         res = res + t[am][bm] * p
+         a = (a - am) / m
+         b = (b - bm) / m
+         p = p*m
+      end
+      res = res + (a + b) * p
+      return res
+   end
+   return bitop
+end
+ 
+local function make_bitop(t)
+   local op1 = make_bitop_uncached(t,2^1)
+   local op2 = memoize(function(a) return memoize(function(b) return op1(a, b) end) end)
+   return make_bitop_uncached(op2, 2 ^ (t.n or 1))
+end
+ 
+local bxor1 = make_bitop({[0] = {[0] = 0,[1] = 1}, [1] = {[0] = 1, [1] = 0}, n = 4})
+ 
+local function bxor(a, b, c, ...)
+   local z = nil
+   if b then
+      a = a % MOD
+      b = b % MOD
+      z = bxor1(a, b)
+      if c then z = bxor(z, c, ...) end
+      return z
+   elseif a then return a % MOD
+   else return 0 end
+end
+ 
+local function band(a, b, c, ...)
+   local z
+   if b then
+      a = a % MOD
+      b = b % MOD
+      z = ((a + b) - bxor1(a,b)) / 2
+      if c then z = bit32_band(z, c, ...) end
+      return z
+   elseif a then return a % MOD
+   else return MODM end
+end
+ 
+local function bnot(x) return (-1 - x) % MOD end
+ 
+local function rshift1(a, disp)
+   if disp < 0 then return lshift(a,-disp) end
+   return math.floor(a % 2 ^ 32 / 2 ^ disp)
+end
+ 
+local function rshift(x, disp)
+   if disp > 31 or disp < -31 then return 0 end
+   return rshift1(x % MOD, disp)
+end
+ 
+local function lshift(a, disp)
+   if disp < 0 then return rshift(a,-disp) end
+   return (a * 2 ^ disp) % 2 ^ 32
+end
+ 
+local function rrotate(x, disp)
+   x = x % MOD
+   disp = disp % 32
+   local low = band(x, 2 ^ disp - 1)
+   return rshift(x, disp) + lshift(low, 32 - disp)
+end
+ 
+local k = {
+   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+   0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+   0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+   0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+   0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+   0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+   0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+   0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+   0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+   0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+   0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+   0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+   0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+   0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+   0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+   0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+}
+ 
+local function str2hexa(s)
+   return (string.gsub(s, ".", function(c) return string.format("%02x", string.byte(c)) end))
+end
+ 
+local function num2s(l, n)
+   local s = ""
+   for i = 1, n do
+      local rem = l % 256
+      s = string.char(rem) .. s
+      l = (l - rem) / 256
+   end
+   return s
+end
+ 
+local function s232num(s, i)
+   local n = 0
+   for i = i, i + 3 do n = n*256 + string.byte(s, i) end
+   return n
+end
+ 
+local function preproc(msg, len)
+   local extra = 64 - ((len + 9) % 64)
+   len = num2s(8 * len, 8)
+   msg = msg .. "\128" .. string.rep("\0", extra) .. len
+   assert(#msg % 64 == 0)
+   return msg
+end
+ 
+local function initH256(H)
+   H[1] = 0x6a09e667
+   H[2] = 0xbb67ae85
+   H[3] = 0x3c6ef372
+   H[4] = 0xa54ff53a
+   H[5] = 0x510e527f
+   H[6] = 0x9b05688c
+   H[7] = 0x1f83d9ab
+   H[8] = 0x5be0cd19
+   return H
+end
+ 
+local function digestblock(msg, i, H)
+   local w = {}
+   for j = 1, 16 do w[j] = s232num(msg, i + (j - 1)*4) end
+   for j = 17, 64 do
+      local v = w[j - 15]
+      local s0 = bxor(rrotate(v, 7), rrotate(v, 18), rshift(v, 3))
+      v = w[j - 2]
+      w[j] = w[j - 16] + s0 + w[j - 7] + bxor(rrotate(v, 17), rrotate(v, 19), rshift(v, 10))
+   end
+ 
+   local a, b, c, d, e, f, g, h = H[1], H[2], H[3], H[4], H[5], H[6], H[7], H[8]
+   for i = 1, 64 do
+      local s0 = bxor(rrotate(a, 2), rrotate(a, 13), rrotate(a, 22))
+      local maj = bxor(band(a, b), band(a, c), band(b, c))
+      local t2 = s0 + maj
+      local s1 = bxor(rrotate(e, 6), rrotate(e, 11), rrotate(e, 25))
+      local ch = bxor (band(e, f), band(bnot(e), g))
+      local t1 = h + s1 + ch + k[i] + w[i]
+      h, g, f, e, d, c, b, a = g, f, e, d + t1, c, b, a, t1 + t2
+   end
+ 
+   H[1] = band(H[1] + a)
+   H[2] = band(H[2] + b)
+   H[3] = band(H[3] + c)
+   H[4] = band(H[4] + d)
+   H[5] = band(H[5] + e)
+   H[6] = band(H[6] + f)
+   H[7] = band(H[7] + g)
+   H[8] = band(H[8] + h)
+end
+ 
+--Generate hash of given file, 'output' mode writes to a file whereas 'return' mode writes to the screen
+function generateHash(file, mode)
+	if fs.exists(file) then
+		local fileopen = fs.open(file, "r")
+		local fileread = fileopen.readAll()
+			
+		fileread = preproc(fileread, #fileread)
+		local H = initH256({})
+		for i = 1, #fileread, 64 do digestblock(fileread, i, H) end
+		if mode == "return" then
+			return str2hexa(num2s(H[1], 4) .. num2s(H[2], 4) .. num2s(H[3], 4) .. num2s(H[4], 4) .. num2s(H[5], 4) .. num2s(H[6], 4) .. num2s(H[7], 4) .. num2s(H[8], 4))
+		elseif mode == "output" then
+			outputhash = str2hexa(num2s(H[1], 4) .. num2s(H[2], 4) .. num2s(H[3], 4) .. num2s(H[4], 4) .. num2s(H[5], 4) .. num2s(H[6], 4) .. num2s(H[7], 4) .. num2s(H[8], 4))
+		else
+			mainError("MVSOFTWARE_MVCORE", "GENERATEHASH_INVALID_MODE")
+		end
+	else
+		mvCore.mainError("MVSOFTWARE_MVCORE","GENERATEHASH_FILE_NOT_FOUND")
+	end
+end
+
+--Generate Hash of user input 
+function generateTextHash(text, mode)
+	if text ~= nil then
+		text = preproc(text, #text)
+		local H = initH256({})
+		for i = 1, #text, 64 do digestblock(text, i, H) end
+		if mode == "return" then
+			return str2hexa(num2s(H[1], 4) .. num2s(H[2], 4) .. num2s(H[3], 4) .. num2s(H[4], 4) .. num2s(H[5], 4) .. num2s(H[6], 4) .. num2s(H[7], 4) .. num2s(H[8], 4))
+		elseif mode == "output" then
+			outputhash = str2hexa(num2s(H[1], 4) .. num2s(H[2], 4) .. num2s(H[3], 4) .. num2s(H[4], 4) .. num2s(H[5], 4) .. num2s(H[6], 4) .. num2s(H[7], 4) .. num2s(H[8], 4))
+		else
+			mainError("MVSOFTWARE_MVCORE", "GENERATETEXTHASH_INVALID_MODE")
+		end
+	else
+		mvCore.mainError("MVSOFTWARE_MVCORE","GENERATETEXTHASH_INPUT_INVALID")
+	end
+end
+
+--Compares the hash of a given file to the input hash
+function validateHash(file, expectedhash)
+   generateHash(file, "output")
+   if expectedhash == outputhash then
+      return true
+   else
+      return false
+   end
+end
+
+--Compares the hash of given text to the input hash
+function validateTextHash(text, expectedhash)
+   generateTextHash(text, "output")
+   if expectedhash == outputhash then
+      return true
+   else
+      return false
+   end
+end

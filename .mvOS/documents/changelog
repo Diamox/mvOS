@@ -1,0 +1,90 @@
+MVOS 2.0 ALPENGLOW - BUILD 15
+
+The changes made to mvCore and mvOS are detailed
+below including additions, removals and anything
+else that you should take note of.
+
+----------------------------------------------------
+
+MVCORE CHANGES
+
+- Updated mvSoftware logo.
+
+- Changed label in bootloader directory settings in
+  mvSetup.
+  
+- Updated mvUI.notify() design.
+
+- Split the mvCore API into several separate APIs
+  depending on their usage. There are now 6 APIs
+  instead of the one, those are: mvExtras, 
+  mvNetwork, mvPeripheral, mvSecurity, mvText and
+  mvUI.
+  
+- Updated mvUI.notify() to include the notification
+  type when calling one.
+
+----------------------------------------------------
+
+MVCORE FIXES
+
+- 
+
+----------------------------------------------------
+
+MVOS CHANGES
+
+- Updated Forest wallpaper.
+
+- Changed 'Software' in Settings to 'Version' and
+  altered string under it.
+  
+- In Settings, updated the tab title for 'About'.
+
+- In Settings, other apps can now launch Settings
+  into a specific tab by specifying it as an
+  argument in the directory string.
+  
+- Last Notification is now interactive just like
+  new notifications on the desktop.
+  
+- Updated notification interactions to take
+  advantage of application's launch commands on the
+  desktop and in Control Panel.
+  
+----------------------------------------------------
+
+MVOS FIXES
+
+- Fixed [End] closing account setup if you haven't
+  set a username and password on first boot.
+  
+- Fixed text appearing in incorrect locations when
+  using the keyboard in account setup on first boot.
+
+----------------------------------------------------
+
+MVSUITE CHANGES
+
+- In NetApps, other apps can start a search in
+  NetApps for an app.
+
+----------------------------------------------------
+
+MVSUITE FIXES
+
+- 
+
+----------------------------------------------------
+
+KNOWN ISSUES
+
+- 
+
+----------------------------------------------------
+
+NOTES
+
+- [WIP] Rift - Application convertion utility that
+  allows for most mvOS 1.x apps to run under later
+  mvOS builds.

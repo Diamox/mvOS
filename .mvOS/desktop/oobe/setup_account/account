@@ -1,0 +1,277 @@
+--Load Personal Settings
+local function loadPersonalSettings()
+	local loadPersonal = fs.open(".system/users/.user1/.config", "r")
+	local personalData = loadPersonal.readAll()
+	loadPersonal.close()
+	personalTable = textutils.unserialise(personalData)
+end
+
+--Save Personal Settings
+local function savePersonalSettings()
+	local personalOpen = fs.open(".system/users/.user1/.config", "w")
+	local personalWrite = personalOpen.write(textutils.serialise(personalTable))
+	personalOpen.close()
+end
+
+--Name change on edit
+nameText = "Your name"
+passText = "Make up a password"
+hintText = "Remind yourself with a hint"
+
+--Start interface
+function startUI()
+
+	--Background wallpaper
+	if settingsTable.isDarkMode == true then
+		if fs.exists(settingsTable.bgImage.."_dm") then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage.."_dm"), 1, 1)
+		elseif fs.exists(settingsTable.bgImage) then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+		else
+			term.setBackgroundColour(colours.lightBlue)
+			term.clear()
+		end
+	else
+		if fs.exists(settingsTable.bgImage) then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+		else
+			term.setBackgroundColour(colours.lightBlue)
+			term.clear()
+		end
+	end
+	
+	if settingsTable.isDarkMode == true then
+		paintutils.drawFilledBox(3, 3, 49, 16, colours.black)
+		mvText.dPrint("Welcome to mvOS", "c", nil, 1, 9, 1, colours.black)
+		mvText.dPrint("Click to get started", "c", nil, 1, 11, 1, colours.black)
+	else
+		paintutils.drawFilledBox(3, 3, 49, 16, 1)
+		mvText.dPrint("Welcome to mvOS", "c", nil, 1, 9, colours.black, 1)
+		mvText.dPrint("Click to get started", "c", nil, 1, 11, colours.black, 1)
+	end
+	
+	startClick()
+	
+end
+
+--Account interface
+function accountUI()
+	
+	--Background wallpaper
+	if settingsTable.isDarkMode == true then
+		if fs.exists(settingsTable.bgImage.."_dm") then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage.."_dm"), 1, 1)
+		elseif fs.exists(settingsTable.bgImage) then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+		else
+			term.setBackgroundColour(colours.lightBlue)
+			term.clear()
+		end
+	else
+		if fs.exists(settingsTable.bgImage) then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+		else
+			term.setBackgroundColour(colours.lightBlue)
+			term.clear()
+		end
+	end
+	
+	loadPersonalSettings()
+	if settingsTable.isDarkMode == true then
+		paintutils.drawFilledBox(3, 3, 49, 16, colours.black)
+		mvText.dPrint(">", nil, nil, 48, 3, colours.green, colours.black)
+		mvText.dPrint("Let's get to know you. Give us a name to", nil, nil, 4, 4, 1, colours.black)
+		mvText.dPrint("call you and a password to keep you secure.", nil, nil, 4, 5, 1, colours.black)
+		mvText.dPrint(nameText, nil, nil, 4, 8, colours.green, colours.black)
+		mvText.dPrint(passText, nil, nil, 4, 11, colours.green, colours.black)
+		mvText.dPrint(hintText, nil, nil, 4, 14, colours.green, colours.black)
+		mvText.dPrint("What shall we call you?", nil, nil, 4, 9, 1, colours.black)
+		mvText.dPrint("Leave blank for no password.", nil, nil, 4, 12, 1, colours.black)
+		mvText.dPrint("Optional but helpful.", nil, nil, 4, 15, 1, colours.black)
+	else
+		paintutils.drawFilledBox(3, 3, 49, 16, 1)
+		mvText.dPrint(">", nil, nil, 48, 3, colours.green, 1)
+		mvText.dPrint("Let's get to know you. Give us a name to", nil, nil, 4, 4, colours.black, 1)
+		mvText.dPrint("call you and a password to keep you secure.", nil, nil, 4, 5, colours.black, 1)
+		mvText.dPrint(nameText, nil, nil, 4, 8, colours.green, 1)
+		mvText.dPrint(passText, nil, nil, 4, 11, colours.green, 1)
+		mvText.dPrint(hintText, nil, nil, 4, 14, colours.green, 1)
+		mvText.dPrint("What shall we call you?", nil, nil, 4, 9, colours.black, 1)
+		mvText.dPrint("Leave blank for no password.", nil, nil, 4, 12, colours.black, 1)
+		mvText.dPrint("Optional but helpful.", nil, nil, 4, 15, colours.black, 1)
+	end
+	accountClick()
+end
+
+--Start response
+function startClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 3 and X <= 49 and Y >= 3 and Y <= 16 then
+			accountUI()
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("Return") then
+			accountUI()
+			break
+		end
+	end
+end
+end
+
+--Account response
+function accountClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 47 and X <= 49 and Y == 3 then
+			if nameCompleted == true then
+				if passCompleted == true then
+					break
+				else
+					if settingsTable.isDarkMode == true then
+						mvText.dPrint(passText, nil, nil, 4, 11, colours.red, colours.black)
+					else
+						mvText.dPrint(passText, nil, nil, 4, 11, colours.red, 1)
+					end
+				end
+			else
+				if settingsTable.isDarkMode == true then
+					mvText.dPrint(nameText, nil, nil, 4, 8, colours.red, colours.black)
+				else
+					mvText.dPrint(nameText, nil, nil, 4, 8, colours.red, 1)
+				end
+			end
+		end
+		if X >= 4 and X <= 44 and Y >= 8 and Y <= 9 then
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(4, 8, 33, 8, colours.black)
+			else
+				paintutils.drawLine(4, 8, 33, 8, 1)
+			end
+			term.setTextColour(colours.green)
+			term.setCursorPos(4, 8)
+			write("My name is ")
+			local getName = mvText.mvRead(nil,nil,35)
+			personalTable.username = getName
+			savePersonalSettings()
+			nameText = "Your name is "..getName
+			nameCompleted = true
+			accountUI()
+			break
+		end
+		if X >= 4 and X <= 44 and Y >= 11 and Y <= 12 then
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(4, 11, 33, 11, colours.black)
+			else
+				paintutils.drawLine(4, 11, 33, 11, 1)
+			end
+			term.setTextColour(colours.green)
+			term.setCursorPos(4, 11)
+			write("My password is ")
+			local getPass = mvText.mvRead('\7',nil,31)
+			personalTable.password = mvSecurity.generateTextHash(getPass, "return")
+			savePersonalSettings()
+			passText = "Password has been saved"
+			passCompleted = true
+			accountUI()
+			break
+		end
+		if X >= 4 and X <= 44 and Y >= 14 and Y <= 15 then
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(4, 14, 33, 14, colours.black)
+			else
+				paintutils.drawLine(4, 14, 33, 14, 1)
+			end
+			term.setTextColour(colours.green)
+			term.setCursorPos(4, 14)
+			write("My hint is ")
+			local getHint = mvText.mvRead(nil,nil,35)
+			personalTable.hint = getHint
+			savePersonalSettings()
+			hintText = "Reminder has been saved"
+			accountUI()
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			if nameCompleted == true then
+				if passCompleted == true then
+					break
+				else
+					if settingsTable.isDarkMode == true then
+						mvText.dPrint(passText, nil, nil, 4, 11, colours.red, colours.black)
+					else
+						mvText.dPrint(passText, nil, nil, 4, 11, colours.red, 1)
+					end
+				end
+			else
+				if settingsTable.isDarkMode == true then
+					mvText.dPrint(nameText, nil, nil, 4, 8, colours.red, colours.black)
+				else
+					mvText.dPrint(nameText, nil, nil, 4, 8, colours.red, 1)
+				end
+			end
+		end
+		if key == mvExtras.keyMapper("1") then
+			sleep()
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(4, 8, 33, 8, colours.black)
+			else
+				paintutils.drawLine(4, 8, 33, 8, 1)
+			end
+			term.setTextColour(colours.green)
+			term.setCursorPos(4, 8)
+			write("My name is ")
+			local getName = mvText.mvRead(nil,nil,35)
+			personalTable.username = getName
+			savePersonalSettings()
+			nameText = "Your name is "..getName
+			nameCompleted = true
+			accountUI()
+			break
+		end
+		if key == mvExtras.keyMapper("2") then
+			sleep()
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(4, 11, 33, 11, colours.black)
+			else
+				paintutils.drawLine(4, 11, 33, 11, 1)
+			end
+			term.setTextColour(colours.green)
+			term.setCursorPos(4, 11)
+			write("My password is ")
+			local getPass = mvText.mvRead('\7',nil,31)
+			personalTable.password = mvSecurity.generateTextHash(getPass, "return")
+			savePersonalSettings()
+			passText = "Password has been saved"
+			passCompleted = true
+			accountUI()
+			break
+		end
+		if key == mvExtras.keyMapper("3") then
+			sleep()
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(4, 14, 33, 14, colours.black)
+			else
+				paintutils.drawLine(4, 14, 33, 14, 1)
+			end
+			term.setTextColour(colours.green)
+			term.setCursorPos(4, 14)
+			write("My hint is ")
+			local getHint = mvText.mvRead(nil,nil,35)
+			personalTable.hint = getHint
+			savePersonalSettings()
+			hintText = "Reminder has been saved"
+			accountUI()
+			break
+		end
+	end
+end
+end
+
+startUI()

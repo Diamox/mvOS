@@ -1,0 +1,1048 @@
+--Load user, settings and desktop config
+local function loadAllConfigs()
+	local loadSettings = fs.open(".system/users/.user1/settings", "r")
+	local settingsData = loadSettings.readAll()
+	loadSettings.close()
+	settingsTable = textutils.unserialise(settingsData)
+	local loadPersonal = fs.open(".system/users/.user1/.config", "r")
+	local personalData = loadPersonal.readAll()
+	loadPersonal.close()
+	personalTable = textutils.unserialise(personalData)
+	local loadSystem = fs.open(".system/desktop/.config", "r")
+	local systemData = loadSystem.readAll()
+	loadSystem.close()
+	systemTable = textutils.unserialise(systemData)
+end
+
+--Save Settings
+local function saveSettings()
+	local settingsOpen = fs.open(".system/users/.user1/settings", "w")
+	local settingsWrite = settingsOpen.write(textutils.serialise(settingsTable))
+	settingsOpen.close()
+end
+
+--Save desktop configuration
+local function saveSystem()
+	local systemOpen = fs.open(".system/desktop/.config", "w")
+	local systemWrite = systemOpen.write(textutils.serialise(systemTable))
+	systemOpen.close()
+end
+
+--Desktop variables
+local DESKTOPSHOWDEBUGTOOLS = false
+
+--We're on the desktop now so let's disable first-boot stuff
+systemTable.isFirstBoot = false
+systemTable.isAccountReady = true
+saveSystem()
+
+--Get display dimensions
+local W, H = term.getSize()
+
+--Time and Date
+local function clockUpdate()
+while true do
+	if runClockUpdate == true then
+		if settingsTable.isDarkMode == true then
+			term.setTextColour(mvExtras.convertColour(systemTable.desktopMenuTextColourDark))
+			term.setBackgroundColour(mvExtras.convertColour(systemTable.desktopMenuColourDark))
+		elseif settingsTable.isDarkMode == false then
+			term.setTextColour(mvExtras.convertColour(systemTable.desktopMenuTextColourLight))
+			term.setBackgroundColour(mvExtras.convertColour(systemTable.desktopMenuColourLight))
+		else
+			mvCore.mainError("MVOS_DESKTOP", "INVALID_DARKMODE_STATE")
+		end
+		nTime = os.time()
+		nDayNo = tostring(os.day())
+		if settingsTable.is24Hour == true then
+			clockLength = #textutils.formatTime(nTime, true)
+			writeClock = textutils.formatTime(nTime, true)
+		else
+			clockLength = #textutils.formatTime(nTime, false)
+			writeClock = textutils.formatTime(nTime, false)
+		end
+		term.setCursorPos(W-3-#nDayNo-clockLength, 19)
+		timeX, timeY = term.getCursorPos()
+		write(writeClock.." | "..os.day())
+		term.setCursorPos(timeX-5, timeY)
+		write("     ")
+		sleep()
+	elseif runClockUpdate == false then
+		sleep()
+	else
+		runClockUpdate = false
+	end
+end
+end
+
+--Find new hardware
+local function hwUpdate()
+while true do
+event, side = os.pullEvent()
+	if settingsTable.doNotify == true then
+		if runClockUpdate == true then
+			if event == "peripheral" then
+				mvUI.notify("New hardware found", peripheral.getType(side), "peripheral")
+				hwUpdateClick()
+			end
+			if event == "disk" then
+				if fs.exists("disk/.update") then
+					local loadUpdate = fs.open("disk/.update", "r")
+					local updateData = loadUpdate.readAll()
+					loadUpdate.close()
+					local mvOSUpdate = textutils.unserialise(updateData)
+					mvUI.notify(mvOSUpdate.name.." "..mvOSUpdate.version.." - "..mvOSUpdate.release, "Click to see more...", "OSUpdate")
+				else
+					getName = disk.getLabel(side)
+					if disk.hasData(side) then
+						if getName == nil or getName == "" then
+							mvUI.notify("Data Diskette (Browser)", "(Not labelled)", "Disk")
+						else
+							mvUI.notify("Data Diskette (Browser)", disk.getLabel(side), "Disk")
+						end
+					elseif disk.hasAudio(side) then
+						if getName == nil or getName == "" then
+							mvUI.notify("Music Disc (mvPlayer)", "(Not labelled)", "Record")
+						else
+							mvUI.notify("Music Disc (mvPlayer)", disk.getLabel(side), "Record")
+						end
+					end
+				end
+				loadAllConfigs()
+				notifyIsActive = true
+			end
+		end
+	end
+end
+end
+
+--Power Off Function
+function powerOffUI()
+	runClockUpdate = false
+	if settingsTable.isDarkMode == true then
+		paintutils.drawFilledBox(1, 1, 51, 19, 128)
+		sleep()
+		paintutils.drawFilledBox(1, 1, 51, 19, colours.black)
+		sleep(0.1)
+	else
+		paintutils.drawFilledBox(1, 1, 51, 19, colours.lightBlue)
+		sleep(0.3)
+		paintutils.drawFilledBox(1, 1, 51, 19, 256)
+		sleep()
+		paintutils.drawFilledBox(1, 1, 51, 19, 128)
+		sleep()
+		paintutils.drawFilledBox(1, 1, 51, 19, colours.black)
+		sleep(0.1)
+	end
+end
+
+--DESKTOP MAIN INTERFACE
+function desktopUI(disableDesktopClick)
+	--Load desktop settings
+	loadAllConfigs()
+	--Enable wireless capabilities
+	if settingsTable.isWireless == true then
+		mvNetwork.rednetInit(true)
+	else
+		mvNetwork.rednetInit(false)
+	end
+	runClockUpdate = false
+	--Background wallpaper
+	if settingsTable.isDarkMode == true then
+		if fs.exists(settingsTable.bgImage.."_dm") then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage.."_dm"), 1, 1)
+		elseif fs.exists(settingsTable.bgImage) then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+		else
+			term.setBackgroundColour(colours.lightBlue)
+			term.clear()
+		end
+	else
+		if fs.exists(settingsTable.bgImage) then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+		else
+			term.setBackgroundColour(colours.lightBlue)
+			term.clear()
+		end
+	end
+	--Sort username out
+	if string.len(personalTable.username) > 20 then
+		userDisplayName = string.sub(personalTable.username, 1, 17).."..."
+	else
+		userDisplayName = string.sub(personalTable.username, 1, 20)
+	end
+	--Bottom Menu Bar
+	if settingsTable.isDarkMode == true then
+		term.setBackgroundColour(mvExtras.convertColour(systemTable.desktopMenuColourDark))
+		paintutils.drawLine(1, 19, 51, 19)
+		mvText.dPrint(userDisplayName, nil, nil, 2, 19, mvExtras.convertColour(systemTable.desktopMenuTextColourDark), mvExtras.convertColour(systemTable.desktopMenuColourDark))
+	else
+		term.setBackgroundColour(mvExtras.convertColour(systemTable.desktopMenuColourLight))
+		paintutils.drawLine(1, 19, 51, 19)
+		mvText.dPrint(userDisplayName, nil, nil, 2, 19, mvExtras.convertColour(systemTable.desktopMenuTextColourLight), mvExtras.convertColour(systemTable.desktopMenuColourLight))
+	end
+	if DESKTOPDEBUGMODE_ON == true then
+		--Debug stuff
+		if DESKTOPSHOWDEBUGTOOLS == true then
+			mvText.dPrint("[INS] Hide keybinds", nil, nil, 1, 1, colours.black, colours.lightBlue)
+			mvText.dPrint("Num1 - Reload mvCore API", nil, nil, 1, 2, colours.black, colours.lightBlue)
+			mvText.dPrint("Num2 - Reload desktop", nil, nil, 1, 3, colours.black, colours.lightBlue)
+			mvText.dPrint("Num3 - Launch setup_account", nil, nil, 1, 4, colours.black, colours.lightBlue)
+			mvText.dPrint("Num4 - Prepare for install disk", nil, nil, 1, 5, colours.black, colours.lightBlue)
+			mvText.dPrint("Num5 - Send sample notification", nil, nil, 1, 6, colours.black, colours.lightBlue)
+		else
+			mvText.dPrint("[INS] Show keybinds", nil, nil, 1, 1, colours.black, colours.lightBlue)
+		end
+	end
+	runClockUpdate = true
+	if disableDesktopClick == "disable" then
+		--Do Nothing
+	else
+		--Run that shit
+		desktopClick()
+	end
+end
+
+--DESKTOP APP MENU
+function desktopAppMenu(disableAppMenuClick)
+	runClockUpdate = false
+	--Tray Animation
+	if settingsTable.isAnimated == true then
+		if settingsTable.isDarkMode == true then
+			paintutils.drawFilledBox(2, 15, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+			paintutils.drawFilledBox(2, 13, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+			paintutils.drawFilledBox(2, 11, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+			paintutils.drawFilledBox(2, 9, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+			paintutils.drawFilledBox(2, 7, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+		else
+			paintutils.drawFilledBox(2, 15, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+			paintutils.drawFilledBox(2, 13, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+			paintutils.drawFilledBox(2, 11, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+			paintutils.drawFilledBox(2, 9, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+			paintutils.drawFilledBox(2, 7, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+		end
+	end
+	--Tray
+	if settingsTable.isDarkMode == true then
+		paintutils.drawFilledBox(2, 7, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		mvText.dPrint("Your apps", nil, nil, 4, 8, 1, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		mvText.dPrint("< Run", nil, nil, 44, 8, 1, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+	else
+		paintutils.drawFilledBox(2, 7, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		mvText.dPrint("Your apps", nil, nil, 4, 8, colours.black, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		mvText.dPrint("< Run", nil, nil, 44, 8, colours.black, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+	end
+	--Icons
+	paintutils.drawFilledBox(3, 10, 13, 12, colours.red)
+	paintutils.drawFilledBox(15, 10, 25, 12, colours.green)
+	paintutils.drawFilledBox(27, 10, 37, 12, colours.orange)
+	paintutils.drawFilledBox(39, 10, 49, 12, 2048)
+	paintutils.drawFilledBox(3, 14, 13, 16, colours.lightGrey)
+	paintutils.drawFilledBox(15, 14, 25, 16, colours.green)
+	paintutils.drawFilledBox(27, 14, 37, 16, colours.black)
+	--Icon Titles
+	mvText.dPrint(string.sub("NetApps",1,9), nil, nil, 4, 11, 1, colours.red)
+	mvText.dPrint(string.sub("NetChat",1,9), nil, nil, 16, 11, 1, colours.green)
+	mvText.dPrint(string.sub("NetInfo",1,9), nil, nil, 28, 11, 1, colours.orange)
+	mvText.dPrint(string.sub("Settings",1,9), nil, nil, 40, 11, 1, 2048)
+	mvText.dPrint(string.sub("Browser",1,9), nil, nil, 4, 15, 1, colours.lightGrey)
+	mvText.dPrint(string.sub("mvPlayer",1,9), nil, nil, 16, 15, 1, colours.green)
+	mvText.dPrint(string.sub("ProShell",1,9), nil, nil, 28, 15, colours.green, colours.black)
+	runClockUpdate = true
+	if disableAppMenuClick == "disable" then
+		--Do Nothing
+	else
+		desktopAppMenuClick()
+	end
+end
+
+--DESKTOP POWER MENU
+function controlCentre(disableAnimation)
+	runClockUpdate = false
+	--Tray Animation
+	if disableAnimation == "nodraw" then
+		--Animation is disabled when switching toggles
+	else
+		if settingsTable.isAnimated == true then
+			if settingsTable.isDarkMode == true then
+				paintutils.drawFilledBox(22, 15, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+				sleep()
+				paintutils.drawFilledBox(22, 13, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+				sleep()
+				paintutils.drawFilledBox(22, 10, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+				sleep()
+				paintutils.drawFilledBox(22, 6, 50, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+				sleep()
+				paintutils.drawFilledBox(22, 5, 50, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+				sleep()
+			else
+				paintutils.drawFilledBox(22, 15, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+				sleep()
+				paintutils.drawFilledBox(22, 13, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+				sleep()
+				paintutils.drawFilledBox(22, 10, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+				sleep()
+				paintutils.drawFilledBox(22, 6, 50, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+				sleep()
+				paintutils.drawFilledBox(22, 5, 50, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+				sleep()
+			end
+		end
+	end
+	--Tray
+	if settingsTable.isDarkMode == true then
+		paintutils.drawFilledBox(22, 10, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+	else
+		paintutils.drawFilledBox(22, 10, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+	end
+	--Text
+	if settingsTable.isDarkMode == true then
+		mvText.dPrint("Control Centre", nil, nil, 23, 11, 1, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		if settingsTable.doNotify == true then
+			mvText.dPrint("Silent", nil, nil, 23, 13, mvExtras.convertColour(systemTable.desktopToggleHighlightOff), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		else
+			mvText.dPrint("Silent", nil, nil, 23, 13, mvExtras.convertColour(systemTable.desktopToggleHighlightOnDark), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		end
+		if settingsTable.isWireless == true then
+			mvText.dPrint("Rednet", nil, nil, 23, 14, mvExtras.convertColour(systemTable.desktopToggleHighlightOnDark), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		else
+			mvText.dPrint("Rednet", nil, nil, 23, 14, mvExtras.convertColour(systemTable.desktopToggleHighlightOff), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		end
+		mvText.dPrint("Dark Mode", nil, nil, 23, 15, mvExtras.convertColour(systemTable.desktopToggleHighlightOnDark), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		if settingsTable.isAnimated == true then
+			mvText.dPrint("Motion", nil, nil, 23, 16, mvExtras.convertColour(systemTable.desktopToggleHighlightOnDark), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		else
+			mvText.dPrint("Motion", nil, nil, 23, 16, mvExtras.convertColour(systemTable.desktopToggleHighlightOff), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		end
+		if mvPeripheral.diskIsPresent() then
+			mvText.dPrint("Drive eject", nil, nil, 37, 13, mvExtras.convertColour(systemTable.desktopToggleHighlightOnDark), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		else
+			mvText.dPrint("Drive eject", nil, nil, 37, 13, mvExtras.convertColour(systemTable.desktopToggleHighlightOff), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		end
+		mvText.dPrint("Shut Down", nil, nil, 37, 14, colours.red, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		mvText.dPrint("Restart", nil, nil, 37, 15, colours.orange, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		mvText.dPrint("Lock", nil, nil, 37, 16, colours.green, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+	else
+		mvText.dPrint("Control Centre", nil, nil, 23, 11, colours.black, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		if settingsTable.doNotify == true then
+			mvText.dPrint("Silent", nil, nil, 23, 13, mvExtras.convertColour(systemTable.desktopToggleHighlightOff), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		else
+			mvText.dPrint("Silent", nil, nil, 23, 13, mvExtras.convertColour(systemTable.desktopToggleHighlightOnLight), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		end
+		if settingsTable.isWireless == true then
+			mvText.dPrint("Rednet", nil, nil, 23, 14, mvExtras.convertColour(systemTable.desktopToggleHighlightOnLight), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		else
+			mvText.dPrint("Rednet", nil, nil, 23, 14, mvExtras.convertColour(systemTable.desktopToggleHighlightOff), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		end
+		mvText.dPrint("Dark Mode", nil, nil, 23, 15, mvExtras.convertColour(systemTable.desktopToggleHighlightOff), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		if settingsTable.isAnimated == true then
+			mvText.dPrint("Motion", nil, nil, 23, 16, mvExtras.convertColour(systemTable.desktopToggleHighlightOnLight), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		else
+			mvText.dPrint("Motion", nil, nil, 23, 16, mvExtras.convertColour(systemTable.desktopToggleHighlightOff), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		end
+		if mvPeripheral.diskIsPresent() then
+			mvText.dPrint("Drive eject", nil, nil, 37, 13, mvExtras.convertColour(systemTable.desktopToggleHighlightOnLight), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		else
+			mvText.dPrint("Drive eject", nil, nil, 37, 13, mvExtras.convertColour(systemTable.desktopToggleHighlightOff), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		end
+		mvText.dPrint("Shut Down", nil, nil, 37, 14, colours.red, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		mvText.dPrint("Restart", nil, nil, 37, 15, colours.orange, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		mvText.dPrint("Lock", nil, nil, 37, 16, colours.green, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+	end
+	
+	--Notifications
+	if settingsTable.isDarkMode == true then
+		paintutils.drawFilledBox(22, 3, 50, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		mvText.dPrint("Last notification", nil, nil, 23, 4, 1, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		mvText.dPrint(string.sub(systemTable.notify1.title,1,27), nil, nil, 23, 6, mvExtras.convertColour(systemTable.desktopToggleHighlightOnDark), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		mvText.dPrint(string.sub(systemTable.notify1.details,1,27), nil, nil, 23, 7, 1, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+	else
+		paintutils.drawFilledBox(22, 3, 50, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		mvText.dPrint("Last notification", nil, nil, 23, 4, colours.black, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		mvText.dPrint(string.sub(systemTable.notify1.title,1,27), nil, nil, 23, 6, mvExtras.convertColour(systemTable.desktopToggleHighlightOnLight), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		mvText.dPrint(string.sub(systemTable.notify1.details,1,27), nil, nil, 23, 7, colours.black, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+	end
+	
+	runClockUpdate = true
+	controlCentreClick()
+end
+	
+function hwUpdateClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	notifyIsActive = nil
+	if event == "mouse_click" then
+		if X >= 48 and X <= 50 and Y == 14 then
+			parallel.waitForAll(desktopUI(), hwUpdate())
+			break
+		end
+		if X >= 26 and X <= 51 and Y >= 15 and Y <= 17 then
+			if systemTable.notify1.type == "Disk" then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."filebrowser/filebrowser")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			elseif systemTable.notify1.type == "Record" then
+				runClockUpdate = false
+				shell.run(systemTable.userAppDir.."mvplayer/mvplayer")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			elseif systemTable.notify1.type == "OSUpdate" then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."settings/settings update")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+		end
+	elseif event == "key" then
+		if key == mvExtras.keyMapper("Return") then
+			if systemTable.notify1.type == "Disk" then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."filebrowser/filebrowser")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			elseif systemTable.notify1.type == "Record" then
+				runClockUpdate = false
+				shell.run(systemTable.userAppDir.."mvplayer/mvplayer")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			elseif systemTable.notify1.type == "OSUpdate" then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."settings/settings update")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			else
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+		end
+	elseif event == "disk_eject" then
+		parallel.waitForAll(desktopUI(), hwUpdate())
+		break
+	elseif event == "terminate" then
+		--Users can no longer terminate this process.
+	end
+end
+end
+
+function desktopClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if not notifyIsActive == true then
+		if event == "mouse_click" then
+			if X >= 1 and X <= #userDisplayName+2 and Y == 19 then
+				desktopAppMenu()
+				break
+			end
+			if X >= timeX and X <= 51 and Y == 19 then
+				controlCentre()
+				break
+			end
+		elseif event == "key" then
+			if key == mvExtras.keyMapper("LCtrl") then
+				desktopAppMenu()
+				break
+			end
+			if key == mvExtras.keyMapper("RCtrl") then
+				controlCentre()
+				break
+			end
+			if key == mvExtras.keyMapper("DKey") then
+				if settingsTable.isDarkMode == true then
+					settingsTable.isDarkMode = false
+					saveSettings()
+				else
+					settingsTable.isDarkMode = true
+					saveSettings()
+				end
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("MKey") then
+				if settingsTable.isAnimated == true then
+					settingsTable.isAnimated = false
+					saveSettings()
+				else
+					settingsTable.isAnimated = true
+					saveSettings()
+				end
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("RKey") then
+				if settingsTable.isWireless == true then
+					settingsTable.isWireless = false
+					saveSettings()
+				else
+					settingsTable.isWireless = true
+					saveSettings()
+				end
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("L") then
+				runClockUpdate = false
+				shell.run(".system/desktop/lock")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if DESKTOPDEBUGMODE_ON == true then
+				if key == mvExtras.keyMapper("1") then
+					os.unloadAPI("mvCore")
+					os.loadAPI(".preboot/mvCore")
+					mvUI.notify("Debug info", "Reloaded mvCore.")
+					hwUpdateClick()
+				end
+				if key == mvExtras.keyMapper("2") then
+					shell.run(".system/desktop/desktop")
+					break
+				end
+				if key == mvExtras.keyMapper("3") then
+					runClockUpdate = false
+					shell.run(".system/desktop/oobe/setup_account/account")
+					runClockUpdate = true
+					parallel.waitForAll(desktopUI(), hwUpdate())
+					break
+				end
+				if key == mvExtras.keyMapper("4") then
+					runClockUpdate = false
+					mvUI.notify("Debug info", "Generating hashes...")
+					local startupHash = mvSecurity.generateHash("startup", "return")
+					sleep()
+					local sysloadHash = mvSecurity.generateHash(".system/sysload", "return")
+					sleep()
+					local sysinfoHash = mvSecurity.generateHash(".system/sysinfo", "return")
+					sleep()
+					local desktopHash = mvSecurity.generateHash(".system/desktop/desktop", "return")
+					sleep()
+					local lockHash = mvSecurity.generateHash(".system/desktop/lock", "return")
+					sleep()
+					local mvSetupHash = mvSecurity.generateHash(".preboot/mvSetup", "return")
+					sleep()
+					local shellHash = mvSecurity.generateHash(".preboot/shell", "return")
+					sleep()
+					local colSyslogoHash = mvSecurity.generateHash(".preboot/img/colsyslogo", "return")
+					sleep()
+					local basSyslogoHash = mvSecurity.generateHash(".preboot/img/bassyslogo", "return")
+					sleep()
+
+					local hashoutput = fs.open(".devtools/hashoutput", "w")
+					hashoutput.writeLine("Startup: "..startupHash)
+					hashoutput.writeLine("sysload: "..sysloadHash)
+					hashoutput.writeLine("sysinfo: "..sysinfoHash)
+					hashoutput.writeLine("desktop: "..desktopHash)
+					hashoutput.writeLine("lock: "..lockHash)
+					hashoutput.writeLine("mvSetup: "..mvSetupHash)
+					hashoutput.writeLine("shell: "..shellHash)
+					hashoutput.writeLine("colsyslogo: "..colSyslogoHash)
+					hashoutput.writeLine("bassyslogo: "..basSyslogoHash)
+					hashoutput.close()
+					desktopUI("disable")
+					
+					systemTable.isFirstBoot = true
+					systemTable.isAccountReady = false
+					saveSystem()
+					
+					mvUI.notify("Debug info", "Ready for install disk.")
+					systemTable.notify1.title = "Your past notifications"
+					systemTable.notify1.details = "will appear on here."
+					systemTable.notify1.type = "oobe"
+					saveSystem()
+					hwUpdateClick()
+				end
+				if key == mvExtras.keyMapper("5") then
+					mvUI.notify("Debug info", "Example mvOS notification")
+					hwUpdateClick()
+				end
+				if key == mvExtras.keyMapper("INS") then
+					if DESKTOPSHOWDEBUGTOOLS == false then
+						DESKTOPSHOWDEBUGTOOLS = true
+					else
+						DESKTOPSHOWDEBUGTOOLS = false
+					end
+					parallel.waitForAll(desktopUI(), hwUpdate())
+					break
+				end
+			end
+		elseif event == "terminate" then
+			--Users can no longer terminate this process.
+		end
+	else
+		hwUpdateClick()
+		break
+	end
+end
+end
+
+function desktopAppMenuClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if not notifyIsActive == true then
+		if event == "mouse_click" then
+			if X >= 1 and X <= #personalTable.username+2 and Y == 19 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 2 and X <= 50 and Y >= 1 and Y <= 6 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X == 1 and Y >= 1 and Y <= 18 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X == 51 and Y >= 1 and Y <= 18 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 1 and X <= 51 and Y == 18 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 44 and X <= 48 and Y == 8 then
+				runClockUpdate = false
+				if settingsTable.isDarkMode == true then
+					paintutils.drawLine(27, 8, 48, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+					term.setTextColour(1)
+				else
+					paintutils.drawLine(27, 8, 48, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+					term.setTextColour(colours.black)
+				end
+				term.setCursorPos(28, 8)
+				write("> ")
+				getInput = mvText.mvRead(nil,nil,20)
+				if getInput == "shutdown" or getInput == "reboot" or getInput == "startup" then
+					--Ignore these
+				else
+					if fs.exists(systemTable.sysAppDir..""..getInput.."/"..getInput) then
+						shell.run(systemTable.sysAppDir..""..getInput.."/"..getInput)
+					elseif fs.exists(systemTable.userAppDir..""..getInput.."/"..getInput) then
+						shell.run(systemTable.userAppDir..""..getInput.."/"..getInput)
+					elseif fs.exists(".system/documents/netapps/"..getInput.."/"..getInput) then
+						shell.run(systemTable.sysAppDir.."netapps/netapps local "..getInput)
+					end
+				end
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 3 and X <= 13 and Y >= 10 and Y <= 12 then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."netapps/netapps")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 15 and X <= 25 and Y >= 10 and Y <= 12 then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."netchat/netchat")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 27 and X <= 37 and Y >= 10 and Y <= 12 then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."netinfo/netinfo")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 39 and X <= 49 and Y >= 10 and Y <= 12 then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."settings/settings")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 3 and X <= 13 and Y >= 14 and Y <= 16 then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."filebrowser/filebrowser")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 15 and X <= 25 and Y >= 14 and Y <= 16 then
+				runClockUpdate = false
+				shell.run(systemTable.userAppDir.."mvplayer/mvplayer")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 27 and X <= 37 and Y >= 14 and Y <= 16 then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."proshell/proshell")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= timeX and X <= 51 and Y == 19 then
+				desktopUI("disable")
+				controlCentre()
+				break
+			end
+		elseif event == "key" then
+			if key == mvExtras.keyMapper("LCtrl") then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("R") then
+				sleep()
+				runClockUpdate = false
+				if settingsTable.isDarkMode == true then
+					paintutils.drawLine(27, 8, 48, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+					term.setTextColour(1)
+				else
+					paintutils.drawLine(27, 8, 48, 8, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+					term.setTextColour(colours.black)
+				end
+				term.setCursorPos(28, 8)
+				write("> ")
+				getInput = mvText.mvRead(nil,nil,20)
+				if getInput == "shutdown" or getInput == "reboot" or getInput == "startup" then
+					--Ignore these
+				elseif getInput == "alpenglow20102021" then
+					DESKTOPDEBUGMODE_ON = true
+				else
+					if fs.exists(systemTable.sysAppDir..""..getInput.."/"..getInput) then
+						shell.run(systemTable.sysAppDir..""..getInput.."/"..getInput)
+					elseif fs.exists(systemTable.userAppDir..""..getInput.."/"..getInput) then
+						shell.run(systemTable.userAppDir..""..getInput.."/"..getInput)
+					elseif fs.exists(".system/documents/netapps/"..getInput.."/"..getInput) then
+						shell.run(systemTable.sysAppDir.."netapps/netapps local "..getInput)
+					end
+				end
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("1") then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."netapps/netapps")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("2") then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."netchat/netchat")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("3") then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."netinfo/netinfo")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("4") then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."settings/settings")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("5") then
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."filebrowser/filebrowser")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("6") then
+				runClockUpdate = false
+				shell.run(systemTable.userAppDir.."mvplayer/mvplayer")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("7") then
+				sleep()
+				runClockUpdate = false
+				shell.run(systemTable.sysAppDir.."proshell/proshell")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("RCtrl") then
+				desktopUI("disable")
+				controlCentre()
+				break
+			end
+		elseif event == "terminate" then
+			--Users can no longer terminate this process.
+		end
+	else
+		hwUpdateClick()
+		break
+	end
+end
+end
+
+function controlCentreClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if not notifyIsActive == true then
+		if event == "mouse_click" then
+			if X >= timeX and X <= 51 and Y == 19 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 1 and X <= 51 and Y >= 1 and Y <= 2 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 1 and X <= 51 and Y == 9 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 1 and X <= 21 and Y >= 1 and Y <= 18 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X == 51 and Y >= 1 and Y <= 19 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 1 and X <= 51 and Y == 18 then
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 22 and X <= 35 and Y == 13 then
+				if settingsTable.doNotify == true then
+					settingsTable.doNotify = false
+					saveSettings()
+				else
+					settingsTable.doNotify = true
+					saveSettings()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if X >= 22 and X <= 35 and Y == 14 then
+				if settingsTable.isWireless == true then
+					settingsTable.isWireless = false
+					saveSettings()
+				else
+					settingsTable.isWireless = true
+					saveSettings()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if X >= 22 and X <= 36 and Y == 15 then
+				if settingsTable.isDarkMode == true then
+					settingsTable.isDarkMode = false
+					saveSettings()
+				else
+					settingsTable.isDarkMode = true
+					saveSettings()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if X >= 22 and X <= 35 and Y == 16 then
+				if settingsTable.isAnimated == true then
+					settingsTable.isAnimated = false
+					saveSettings()
+				else
+					settingsTable.isAnimated = true
+					saveSettings()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if X >= 36 and X <= 50 and Y == 13 then
+				if mvPeripheral.diskIsPresent() then
+					mvCore.diskEject()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if X >= 36 and X <= 50 and Y == 14 then
+				powerOffUI()
+				os.shutdown()
+				break
+			end
+			if X >= 36 and X <= 50 and Y == 15 then
+				powerOffUI()
+				os.reboot()
+				break
+			end
+			if X >= 36 and X <= 50 and Y == 16 then
+				runClockUpdate = false
+				shell.run(".system/desktop/lock")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if X >= 1 and X <= #personalTable.username+2 and Y == 19 then
+				desktopUI("disable")
+				desktopAppMenu()
+				break
+			end
+			if X >= 22 and X <= 50 and Y >= 3 and Y <= 8 then
+				if systemTable.notify1.type == "Disk" then
+					runClockUpdate = false
+					shell.run(systemTable.sysAppDir.."filebrowser/filebrowser")
+					runClockUpdate = true
+					parallel.waitForAll(desktopUI(), hwUpdate())
+					break
+				elseif systemTable.notify1.type == "Record" then
+					runClockUpdate = false
+					shell.run(systemTable.userAppDir.."mvplayer/mvplayer")
+					runClockUpdate = true
+					parallel.waitForAll(desktopUI(), hwUpdate())
+					break
+				elseif systemTable.notify1.type == "OSUpdate" then
+					runClockUpdate = false
+					shell.run(systemTable.sysAppDir.."settings/settings update")
+					runClockUpdate = true
+					parallel.waitForAll(desktopUI(), hwUpdate())
+					break
+				end
+			end
+		elseif event == "key" then
+			if key == mvExtras.keyMapper("RCtrl") then
+				desktopUI()
+				break
+			end
+			if key == mvExtras.keyMapper("1") then
+				if settingsTable.doNotify == true then
+					settingsTable.doNotify = false
+					saveSettings()
+				else
+					settingsTable.doNotify = true
+					saveSettings()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if key == mvExtras.keyMapper("2") then
+				if settingsTable.isWireless == true then
+					settingsTable.isWireless = false
+					saveSettings()
+				else
+					settingsTable.isWireless = true
+					saveSettings()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if key == mvExtras.keyMapper("3") then
+				if settingsTable.isDarkMode == true then
+					settingsTable.isDarkMode = false
+					saveSettings()
+				else
+					settingsTable.isDarkMode = true
+					saveSettings()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if key == mvExtras.keyMapper("4") then
+				if settingsTable.isAnimated == true then
+					settingsTable.isAnimated = false
+					saveSettings()
+				else
+					settingsTable.isAnimated = true
+					saveSettings()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if key == mvExtras.keyMapper("5") then
+				if mvPeripheral.diskIsPresent() then
+					mvCore.diskEject()
+				end
+				desktopUI("disable")
+				controlCentre("nodraw")
+				break
+			end
+			if key == mvExtras.keyMapper("RKey") then
+				powerOffUI()
+				os.reboot()
+				break
+			end
+			if key == mvExtras.keyMapper("SKey") then
+				powerOffUI()
+				os.shutdown()
+				break
+			end
+			if key == mvExtras.keyMapper("LKey") then
+				runClockUpdate = false
+				shell.run(".system/desktop/lock")
+				runClockUpdate = true
+				parallel.waitForAll(desktopUI(), hwUpdate())
+				break
+			end
+			if key == mvExtras.keyMapper("LCtrl") then
+				desktopUI("disable")
+				desktopAppMenu()
+				break
+			end
+			if key == mvExtras.keyMapper("Return") then
+				if systemTable.notify1.type == "Disk" then
+					runClockUpdate = false
+					shell.run(systemTable.sysAppDir.."filebrowser/filebrowser")
+					runClockUpdate = true
+					parallel.waitForAll(desktopUI(), hwUpdate())
+					break
+				elseif systemTable.notify1.type == "Record" then
+					runClockUpdate = false
+					shell.run(systemTable.userAppDir.."mvplayer/mvplayer")
+					runClockUpdate = true
+					parallel.waitForAll(desktopUI(), hwUpdate())
+					break
+				elseif systemTable.notify1.type == "OSUpdate" then
+					runClockUpdate = false
+					shell.run(systemTable.sysAppDir.."settings/settings update")
+					runClockUpdate = true
+					parallel.waitForAll(desktopUI(), hwUpdate())
+					break
+				end
+			end
+		elseif event == "disk" then
+			desktopUI("disable")
+			controlCentre("nodraw")
+		elseif event == "disk_eject" then
+			desktopUI("disable")
+			controlCentre("nodraw")			
+		elseif event == "terminate" then
+			--Users can no longer terminate this process.
+		end
+	else
+		hwUpdateClick()
+		break
+	end
+end
+end
+
+parallel.waitForAny(desktopUI, clockUpdate, hwUpdate)

@@ -1,0 +1,205 @@
+--tArgs
+local tArgs = {...}
+
+--Home UI
+function HomeUI(noDraw)
+	if noDraw == true then
+		mvUI.basicUI(".system/applications/system/netapps/config",false)
+		if settingsTable.isDarkMode == true then
+			mvText.dPrint("<", nil, nil, 48, 1, colours.red, colours.black)
+			mvText.dPrint("Save", nil, nil, 43, 1, colours.red, colours.black)
+		else
+			mvText.dPrint("<", nil, nil, 48, 1, colours.red, 1)
+			mvText.dPrint("Save", nil, nil, 43, 1, colours.red, 1)
+		end
+	else
+		mvUI.basicUI(".system/applications/system/netapps/config",true)
+		if connectError == nil or connectError == false then
+			gotApp = false
+			if settingsTable.isDarkMode == true then
+				mvText.dPrint("<", nil, nil, 48, 1, colours.red, colours.black)
+				mvText.dPrint("Works like magic", nil, nil, 4, 7, colours.red, colours.black)
+				mvText.dPrint("Keep for yourself", nil, nil, 4, 11, colours.red, colours.black)
+				mvText.dPrint("Run apps over a wireless network stored on", nil, nil, 4, 8, 1, colours.black)
+				mvText.dPrint("an external server far, far away.", nil, nil, 4, 9, 1, colours.black)
+				mvText.dPrint("Choose to save any apps you run to your", nil, nil, 4, 12, 1, colours.black)
+				mvText.dPrint("own computer so you can use them later.", nil, nil, 4, 13, 1, colours.black)
+				if settingsTable.isWireless == false then
+					mvText.dPrint("Rednet is currently disabled", nil, nil, 4, 16, 256, colours.black)
+				end
+			else
+				mvText.dPrint("<", nil, nil, 48, 1, colours.red, 1)
+				mvText.dPrint("Works like magic", nil, nil, 4, 7, colours.red, 1)
+				mvText.dPrint("Keep for yourself", nil, nil, 4, 11, colours.red, 1)
+				mvText.dPrint("Run apps over a wireless network stored on", nil, nil, 4, 8, colours.black, 1)
+				mvText.dPrint("an external server far, far away.", nil, nil, 4, 9, colours.black, 1)
+				mvText.dPrint("Choose to save any apps you run to your", nil, nil, 4, 12, colours.black, 1)
+				mvText.dPrint("own computer so you can use them later.", nil, nil, 4, 13, colours.black, 1)
+				if settingsTable.isWireless == false then
+					mvText.dPrint("Rednet is currently disabled", nil, nil, 4, 16, 128, 1)
+				end
+			end
+		else
+			gotApp = false
+			if settingsTable.isDarkMode == true then
+				mvText.dPrint("<", nil, nil, 48, 1, colours.red, colours.black)
+				mvText.dPrint("Connection error", nil, nil, 4, 7, colours.red, colours.black)
+				mvText.dPrint([[Nothing came back for your search, try...]], nil, nil, 4, 8, 1, colours.black)
+				mvText.dPrint("- Is Rednet turned on?", nil, nil, 4, 11, 1, colours.black)
+				mvText.dPrint("- Did you spell it right?", nil, nil, 4, 13, 1, colours.black)
+				mvText.dPrint("- Is the server still up?", nil, nil, 4, 15, 1, colours.black)
+				if settingsTable.isWireless == false then
+					mvText.dPrint("Rednet is currently disabled", nil, nil, 4, 17, 256, colours.black)
+				end
+			else
+				mvText.dPrint("<", nil, nil, 48, 1, colours.red, 1)
+				mvText.dPrint("Connection error", nil, nil, 4, 7, colours.red, 1)
+				mvText.dPrint([[Nothing came back for your search, try...]], nil, nil, 4, 8, colours.black, 1)
+				mvText.dPrint("- Is Rednet turned on?", nil, nil, 4, 11, colours.black, 1)
+				mvText.dPrint("- Did you spell it right?", nil, nil, 4, 13, colours.black, 1)
+				mvText.dPrint("- Is the server still up?", nil, nil, 4, 15, colours.black, 1)
+				if settingsTable.isWireless == false then
+					mvText.dPrint("Rednet is currently disabled", nil, nil, 4, 17, 128, 1)
+				end
+			end
+		end
+	end
+	Click()
+end
+
+--Search Bar UI
+function searchBar()
+	if settingsTable.isDarkMode == true then
+		paintutils.drawLine(1, 1, 48, 1, colours.black)
+		mvText.dPrint("Search> ", nil, nil, 2, 1, colours.red, colours.black)
+	else
+		paintutils.drawLine(1, 1, 48, 1, 1)
+		mvText.dPrint("Search> ", nil, nil, 2, 1, colours.red, 1)
+	end
+	getApplication()
+end
+
+--Get text and look for app
+function getApplication(data)
+	if data == nil then
+		getName = read()
+	else
+		getName = data
+	end
+	rednet.broadcast(getName)
+	id, message = rednet.receive(0.5)
+	if message == nil then
+		connectError = true
+		HomeUI()
+	else
+		connectError = nil
+		gotApp = true
+		if fs.exists(".temp/netapps/"..getName) then
+			fs.delete(".temp/netapps/"..getName)
+		end
+		writeApp = fs.open(".temp/netapps/"..getName.."/"..getName,"w")
+		writeApp.write(message)
+		writeApp.close()
+		if settingsTable.isDarkMode == true then
+			mvUI.displayReset(1, colours.black)
+		else
+			mvUI.displayReset(colours.black,1)
+		end
+		shell.run(".temp/netapps/"..getName.."/"..getName)
+		HomeUI(true)
+	end
+end
+
+function savePage()
+	if gotApp == false then
+		--Let's not do anything
+	else
+		if fs.exists(".temp/netapps/"..getName) then
+			if fs.exists(".system/documents/netapps/"..getName) then
+				fs.delete(".system/documents/netapps/"..getName)
+			end
+			fs.copy(".temp/netapps/"..getName,".system/documents/netapps/"..getName)
+			if settingsTable.isDarkMode == true then
+				mvText.dPrint("Save", nil, nil, 43, 1, colours.green, colours.black)
+			else
+				mvText.dPrint("Save", nil, nil, 43, 1, colours.green, 1)
+			end
+		else
+			--Let's not do anything here either
+		end
+	end
+end
+
+
+function Click()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			getName = nil
+			connectError = nil
+			if fs.exists(".temp/netapps") then
+				fs.delete(".temp/netapps")
+			end
+			break
+		end
+		if X >= 1 and X <= 9 and Y == 1 then
+			connectError = nil
+			HomeUI()
+			break
+		end
+		if X == 48 and Y == 1 then
+			searchBar()
+			break
+		end
+		if X >= 43 and X <= 46 and Y == 1 then
+			savePage()
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("Return") then
+			sleep()
+			searchBar()
+			break
+		end
+		if key == mvExtras.keyMapper("SKey") then
+			sleep()
+			savePage()
+		end
+		if key == mvExtras.keyMapper("Home") then
+			connectError = nil
+			HomeUI()
+			break
+		end
+		if key == mvExtras.keyMapper("End") then
+			getName = nil
+			connectError = nil
+			if fs.exists(".temp/netapps") then
+				fs.delete(".temp/netapps")
+			end
+			sleep()
+			break
+		end
+	end
+end
+end
+
+local env = tArgs[1]
+local app = tArgs[2]
+if env == "local" then
+	if fs.exists(".system/documents/netapps/"..app.."/"..app) then
+		mvUI.basicUI(".system/applications/system/netapps/config",true)
+		shell.run(".system/documents/netapps/"..app.."/"..app)
+		HomeUI(true)
+	else
+		HomeUI()
+	end
+elseif env == "search" then
+	if not app == nil then
+		getApplication(app)
+	else
+		print("Search called, no address given.")
+	end
+else
+	HomeUI()
+end

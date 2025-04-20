@@ -1,0 +1,221 @@
+--Variables
+local tArgs = {...}
+if cPlayerCurrentlyPlaying == nil then
+	cPlayerCurrentlyPlaying = false
+end
+
+--Track lengths
+function getTrackLength()
+	cPlayerCurrentTrack = disk.getAudioTitle(mvPeripheral.diskGetSide())
+	if cPlayerCurrentTrack == "C418 - blocks" then
+		trackLength = "5:45"
+	elseif cPlayerCurrentTrack == "C418 - 13" then
+		trackLength = "2:58"
+	elseif cPlayerCurrentTrack == "C418 - cat" then
+		trackLength = "3:05"
+	elseif cPlayerCurrentTrack == "C418 - far" then
+		trackLength = "2:54"
+	elseif cPlayerCurrentTrack == "C418 - mall" then
+		trackLength = "3:17"
+	elseif cPlayerCurrentTrack == "C418 - mellohi" then
+		trackLength = "1:36"
+	elseif cPlayerCurrentTrack == "C418 - stal" then
+		trackLength = "2:30"
+	elseif cPlayerCurrentTrack == "C418 - strad" then
+		trackLength = "3:08"
+	elseif cPlayerCurrentTrack == "C418 - ward" then
+		ptrackLength = "4:11"
+	elseif cPlayerCurrentTrack == "C418 - 11" then
+		trackLength = "1:11"
+	elseif cPlayerCurrentTrack == "C418 - wait" then
+		trackLength = "3:58"
+	elseif cPlayerCurrentTrack == "C418 - chirp" then
+		trackLength = "3:05"
+	else
+		trackLength = "Unknown"
+	end
+end
+
+--Disc Tab UI
+function discUI()
+	if settingsTable.isDarkMode == true then
+		mvUI.tabbedUI(".system/applications/user/mvplayer/config",1)
+		mvText.dPrint("Disc information", nil, nil, 18, 1, 1, colours.black)
+		if mvPeripheral.diskIsPresent() then
+			if mvPeripheral.diskHasAudio() then
+				getTrackLength()
+				mvText.dPrint("Disc present in "..mvPeripheral.diskGetSide().." drive", nil, nil, 18, 4, 1, colours.black)
+				mvText.dPrint("Title: "..disk.getAudioTitle(mvPeripheral.diskGetSide()), nil, nil, 18, 6, 1, colours.black)
+				mvText.dPrint("Length: "..trackLength, nil, nil, 18, 7, 1, colours.black)
+				if cPlayerCurrentlyPlaying == true then
+					mvText.dPrint("\15", nil, nil, 48, 1, colours.green, colours.black)
+				else
+					mvText.dPrint("\15", nil, nil, 48, 1, 1, colours.black)
+				end
+			else
+				mvText.dPrint("Media present in "..mvPeripheral.diskGetSide().." drive", nil, nil, 18, 4, 1, colours.black)
+				mvText.dPrint("Incompatible media", nil, nil, 18, 6, 1, colours.black)
+			end
+		else
+			mvText.dPrint("Disc not present", nil, nil, 18, 4, 1, colours.black)
+		end
+	else
+		mvUI.tabbedUI(".system/applications/user/mvplayer/config",1)
+		mvText.dPrint("Disc information", nil, nil, 18, 1, colours.black, 1)
+		if mvPeripheral.diskIsPresent() then
+			if mvPeripheral.diskHasAudio() then
+				getTrackLength()
+				mvText.dPrint("Disc present in "..mvPeripheral.diskGetSide().." drive", nil, nil, 18, 4, colours.black, 1)
+				mvText.dPrint("Title: "..disk.getAudioTitle(mvPeripheral.diskGetSide()), nil, nil, 18, 6, colours.black, 1)
+				mvText.dPrint("Length: "..trackLength, nil, nil, 18, 7, colours.black, 1)
+				if cPlayerCurrentlyPlaying == true then
+					mvText.dPrint("\15", nil, nil, 48, 1, colours.green, 1)
+				else
+					mvText.dPrint("\15", nil, nil, 48, 1, colours.black, 1)
+				end
+			else
+				mvText.dPrint("Media present in "..mvPeripheral.diskGetSide().." drive", nil, nil, 18, 4, colours.black, 1)
+				mvText.dPrint("Incompatible media", nil, nil, 18, 6, colours.black, 1)
+			end
+		else
+			mvText.dPrint("Disc not present", nil, nil, 18, 4, colours.black, 1)
+		end
+	end
+	discClick()
+end
+
+--Info Tab UI
+function infoUI()
+	if settingsTable.isDarkMode == true then
+		mvUI.tabbedUI(".system/applications/user/mvplayer/config",2)
+		mvText.dPrint("Software information", nil, nil, 18, 1, 1, colours.black)
+		mvText.dPrint("mvPlayer Mint", nil, nil, 18, 4, colours.green, colours.black)
+		mvText.dPrint("Simple record player built on", nil, nil, 18, 5, 256, colours.black)
+		mvText.dPrint("the mvCore framework", nil, nil, 18, 6, 256, colours.black)
+	else
+		mvUI.tabbedUI(".system/applications/user/mvplayer/config",2)
+		mvText.dPrint("Software information", nil, nil, 18, 1, colours.black, 1)
+		mvText.dPrint("mvPlayer Mint", nil, nil, 18, 4, colours.green, 1)
+		mvText.dPrint("Simple record player built on", nil, nil, 18, 5, 128, 1)
+		mvText.dPrint("the mvCore framework", nil, nil, 18, 6, 128, 1)
+	end
+	infoClick()
+end
+
+--Disc Tab Click
+function discClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 7 then
+			infoUI()
+			break
+		end
+		if X == 48 and Y == 1 then
+			if mvPeripheral.diskIsPresent then
+				if mvPeripheral.diskHasAudio() then
+					if cPlayerCurrentlyPlaying == true then
+						disk.stopAudio(mvPeripheral.diskGetSide())
+						cPlayerCurrentlyPlaying = false
+					else
+						disk.playAudio(mvPeripheral.diskGetSide())
+						cPlayerCurrentlyPlaying = true
+					end
+				end
+			end
+			discUI()
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			sleep()
+			break
+		end
+		if key == mvExtras.keyMapper("Tab") then
+			infoUI()
+			break
+		end
+		if key == mvExtras.keyMapper("PKey") then
+			if mvPeripheral.diskIsPresent then
+				if mvPeripheral.diskHasAudio() then
+					if cPlayerCurrentlyPlaying == true then
+						disk.stopAudio(mvPeripheral.diskGetSide())
+						cPlayerCurrentlyPlaying = false
+					else
+						disk.playAudio(mvPeripheral.diskGetSide())
+						cPlayerCurrentlyPlaying = true
+					end
+				end
+			end
+			discUI()
+			break
+		end
+	end
+	if event == "disk" then
+		discUI()
+		break
+	end
+	if event == "disk_eject" then
+		discUI()
+		break
+	end
+end
+end
+
+--Info Tab Click
+function infoClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 4 then
+			discUI()
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			sleep()
+			break
+		end
+		if key == mvExtras.keyMapper("Tab") then
+			discUI()
+			break
+		end
+	end
+end
+end
+
+--Manage arguments
+local cPlayerArgs = tArgs[1]
+if cPlayerArgs == "play" then
+	if mvPeripheral.diskIsPresent then
+		if mvPeripheral.diskHasAudio() then
+			disk.playAudio(mvPeripheral.diskGetSide())
+			return true
+		else
+			return false
+		end
+	else
+		return false
+	end
+elseif cPlayerArgs == "stop" then
+	if mvPeripheral.diskIsPresent then
+		if mvPeripheral.diskHasAudio() then
+			disk.stopAudio(mvPeripheral.diskGetSide())
+			return true
+		else
+			return false
+		end
+	else
+		return false
+	end
+else
+	discUI()
+end

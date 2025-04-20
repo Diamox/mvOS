@@ -1,0 +1,159 @@
+--Load Settings
+local function loadNetChatPrefs()
+	local loadVars = fs.open(".system/documents/netchat/settings", "r")
+	local netchatSettings = loadVars.readAll()
+	loadVars.close()
+	netchatConfig = textutils.unserialise(netchatSettings)
+end
+
+--Save Settings
+local function saveNetChatPrefs()
+	local writeSettings = fs.open(".system/documents/netchat/settings", "w")
+	local newSettings = writeSettings.write(textutils.serialise(netchatConfig))
+	writeSettings.close()
+end
+
+--Home UI
+function HomeUI()
+	loadNetChatPrefs()
+	mvUI.basicUI(".system/applications/system/netchat/config",true)
+	if settingsTable.isDarkMode == true then
+		mvText.dPrint("Socialise with near and far", nil, nil, 4, 7, colours.green, colours.black)
+		mvText.dPrint("No matter where they are, keep in touch with", nil, nil, 4, 8, 1, colours.black)
+		mvText.dPrint("friends and family. Get yourself a name, a", nil, nil, 4, 9, 1, colours.black)
+		mvText.dPrint("room, and you're ready to get chatting.", nil, nil, 4, 10, 1, colours.black)
+		mvText.dPrint("|", "c", nil, 1, 13, colours.green, colours.black)
+		mvText.dPrint("|", "c", nil, 1, 14, colours.green, colours.black)
+		mvText.dPrint("Name", nil, nil, 20, 13, colours.green, colours.black)
+		mvText.dPrint("Room", nil, nil, 27, 13, colours.green, colours.black)
+		if settingsTable.isWireless == false then
+			mvText.dPrint("Rednet is currently disabled", "c", nil, 4, 16, 256, colours.black)
+		else
+			mvText.dPrint("Start", "c", nil, 1, 17, colours.green, colours.black)
+		end
+		mvText.dPrint(netchatConfig.name, nil, nil, 24-#netchatConfig.name, 14, 1, colours.black)
+		mvText.dPrint(netchatConfig.server, nil, nil, 27, 14, 1, colours.black)
+	else
+		mvText.dPrint("Social without the hassle", nil, nil, 4, 7, colours.green, 1)
+		mvText.dPrint("No matter where they are, keep in touch with", nil, nil, 4, 8, colours.black, 1)
+		mvText.dPrint("friends and family. Get yourself a name, a", nil, nil, 4, 9, colours.black, 1)
+		mvText.dPrint("room, and you're ready to get chatting.", nil, nil, 4, 10, colours.black, 1)
+		mvText.dPrint("|", "c", nil, 1, 13, colours.green, 1)
+		mvText.dPrint("|", "c", nil, 1, 14, colours.green, 1)
+		mvText.dPrint("Name", nil, nil, 20, 13, colours.green, 1)
+		mvText.dPrint("Room", nil, nil, 27, 13, colours.green, 1)
+		if settingsTable.isWireless == false then
+			mvText.dPrint("Rednet is currently disabled", "c", nil, 4, 16, 128, 1)
+		else
+			mvText.dPrint("Start", "c", nil, 1, 17, colours.green, 1)
+		end
+		mvText.dPrint(netchatConfig.name, nil, nil, 24-#netchatConfig.name, 14, colours.black, 1)
+		mvText.dPrint(netchatConfig.server, nil, nil, 27, 14, colours.black, 1)
+	end
+	Click()
+end
+
+function Click()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			netchatConfig = nil
+			break
+		end
+		if X >= 10 and X <= 24 and Y >= 13 and Y <= 14 then
+			if settingsTable.isDarkMode == true then
+				mvText.dPrint("Name> ", nil, nil, 4, 16, colours.green, colours.black)
+				term.setTextColour(1)
+			else
+				mvText.dPrint("Name> ", nil, nil, 4, 16, colours.green, 1)
+				term.setTextColour(colours.black)
+			end
+			changeUserName = read()
+			netchatConfig.name = changeUserName
+			saveNetChatPrefs()
+			HomeUI()
+			break
+		end
+		if X >= 26 and X <= 40 and Y >= 13 and Y <= 14 then
+			if settingsTable.isDarkMode == true then
+				mvText.dPrint("Room> ", nil, nil, 4, 16, colours.green, colours.black)
+				term.setTextColour(1)
+			else
+				mvText.dPrint("Room> ", nil, nil, 4, 16, colours.green, 1)
+				term.setTextColour(colours.black)
+			end
+			changeServerName = read()
+			netchatConfig.server = changeServerName
+			saveNetChatPrefs()
+			HomeUI()
+			break
+		end
+		if X >= 23 and X <= 27 and Y == 17 then
+			term.setCursorPos(4, 16)
+			if settingsTable.isWireless == true then
+				if settingsTable.isDarkMode == true then
+					mvText.dPrint("Searching...", "c", nil, 1, 17, colours.green, colours.black)
+				else
+					mvText.dPrint("Searching...", "c", nil, 1, 17, colours.green, 1)
+				end
+				shell.run(".system/applications/system/netchat/netchatserv join "..netchatConfig.server.." "..netchatConfig.name.." silent")
+				HomeUI()
+				break
+			end
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			netchatConfig = nil
+			sleep()
+			break
+		end
+		if key == mvExtras.keyMapper("1") then
+			sleep()
+			if settingsTable.isDarkMode == true then
+				mvText.dPrint("Name> ", nil, nil, 4, 16, colours.green, colours.black)
+				term.setTextColour(1)
+			else
+				mvText.dPrint("Name> ", nil, nil, 4, 16, colours.green, 1)
+				term.setTextColour(colours.black)
+			end
+			changeUserName = read()
+			netchatConfig.name = changeUserName
+			saveNetChatPrefs()
+			HomeUI()
+			break
+		end
+		if key == mvExtras.keyMapper("2") then
+			sleep()
+			if settingsTable.isDarkMode == true then
+				mvText.dPrint("Server> ", nil, nil, 4, 16, colours.green, colours.black)
+				term.setTextColour(1)
+			else
+				mvText.dPrint("Server> ", nil, nil, 4, 16, colours.green, 1)
+				term.setTextColour(colours.black)
+			end
+			changeServerName = read()
+			netchatConfig.server = changeServerName
+			saveNetChatPrefs()
+			HomeUI()
+			break
+		end
+		if key == mvExtras.keyMapper("Return") then
+			term.setCursorPos(4, 16)
+			if settingsTable.isWireless == true then
+				if settingsTable.isDarkMode == true then
+					mvText.dPrint("Searching...", "c", nil, 1, 17, colours.green, colours.black)
+				else
+					mvText.dPrint("Searching...", "c", nil, 1, 17, colours.green, 1)
+				end
+				shell.run(".system/applications/system/netchat/netchatserv join "..netchatConfig.server.." "..netchatConfig.name.." silent")
+				HomeUI()
+			end
+			break
+		end
+	end
+end
+end
+
+HomeUI()

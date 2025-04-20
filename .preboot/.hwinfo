@@ -1,0 +1,16 @@
+{
+  platform = {
+    name = "Basic Computer",
+	id = "Dev1,1", --Device model 1, revision 2
+    type = 2,
+	minimumOS = "7",
+  },
+
+  capabilities = {
+	textMode = true,
+	useColour = false,
+	useMouse = false,
+	useCommands = false,
+	mobileWireless = false,
+  },
+}

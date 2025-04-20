@@ -1,0 +1,27 @@
+{
+  appData = {
+    appName = "Settings",
+    appVersion = "0.1",
+    appBuild = "20200823",
+    appDeveloper = "mvSoftware",
+  },
+
+  uiData = {
+	appNameColour = "colours.white",
+	appNameColourDark = "colours.white",
+    sidebarColour = "colours.blue",
+    sidebarTextColour = "colours.lightGrey",
+    sidebarTextColourHighlight = "colours.white",
+    sidebarColourDark = "colours.grey",
+    sidebarTextColourDark = "colours.black",
+    sidebarTextColourDarkHighlight = "colours.white",
+  },
+  
+  tabData = {
+    tab1 = "About",
+    tab2 = "System",
+    tab3 = "Wallpaper",
+    tab4 = "Personal",
+    tab5 = "Update",
+  },
+}

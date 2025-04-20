@@ -1,0 +1,283 @@
+--Call this function to print out mvToolkit Copyright Information
+function copyright()
+   return "Copyright \169 mvSoftware 2020 - 2021"
+end
+
+--Call this function to print out mvToolkit Copyright Information (Alternate Style)
+function copyrightAlt()
+    return "Copyright \169 mvSoftware \n2020 - 2021"
+end
+
+--Hangs the machine
+function hangMachine()
+    while true do
+       event, char, X, Y = os.pullEventRaw()
+          if event == "terminate" or event == "error" then
+             --Hang
+          end
+    end
+end
+
+--Get the free space on disk and auto converts to MB/KB/B
+function remainingSpace(dir)
+	getSpace = fs.getFreeSpace(dir)
+	if getSpace >= 1000 * 1000 then
+		print(math.ceil((math.ceil( getSpace / ( 100 * 1000 ) ) / 10)).."MB")
+	elseif getSpace >= 1000 then
+		print(math.ceil((math.ceil( getSpace / 100 ) / 10)).."KB")
+	else
+		print(math.ceil(getSpace).."B")
+	end
+end
+
+--This function maps Computercraft Scan Codes onto easy to use names for use in os.pullEvent("key")
+function keyMapper(key)
+    if key == ESCKey then return 1
+    elseif key == "F1Key" or key == "F1" then return 59
+    elseif key == "F2Key" or key == "F2" then return 60
+    elseif key == "F3Key" or key == "F3" then return 61
+    elseif key == "F4Key" or key == "F4" then return 62
+    elseif key == "F5Key" or key == "F5" then return 63
+    elseif key == "F6Key" or key == "F6" then return 64
+    elseif key == "F7Key" or key == "F7" then return 65
+    elseif key == "F8Key" or key == "F8" then return 66
+    elseif key == "F9Key" or key == "F9" then return 67
+    elseif key == "F10Key" or key == "F10" then return 68
+    elseif key == "F11Key" or key == "F11" then return 87
+    elseif key == "F12Key" or key == "F12" then return 88
+    elseif key == "PrntScrn" then return 183
+    elseif key == "ScrLock" then return 70
+    elseif key == "Pause" then return 197
+    elseif key == "Tilde" then return 41
+    elseif key == "NumRow1" or key == "1" then return 2
+    elseif key == "NumRow2" or key == "2" then return 3
+    elseif key == "NumRow3" or key == "3" then return 4
+    elseif key == "NumRow4" or key == "4" then return 5
+    elseif key == "NumRow5" or key == "5" then return 6
+    elseif key == "NumRow6" or key == "6" then return 7
+    elseif key == "NumRow7" or key == "7" then return 8
+    elseif key == "NumRow8" or key == "8" then return 9
+    elseif key == "NumRow9" or key == "9" then return 10
+    elseif key == "NumRow0" or key == "0" then return 11
+    elseif key == "NumRowMinus" or key == "-" then return 12
+    elseif key == "NumRowEquals" or key == "=" then return 13
+    elseif key == "Backspace" then return 14
+    elseif key == "Insert" or key == "INS" then return 210
+    elseif key == "Home" then return 199
+    elseif key == "PageUp" then return 201
+    elseif key == "NumLock" then return 69
+    elseif key == "NumPadSlash" then return 181
+    elseif key == "NumPadMultiply" then return 55
+    elseif key == "NumPadMinus" then return 74
+    elseif key == "Tab" then return 15
+    elseif key == "QKey" or key == "Q" then return 16
+    elseif key == "WKey" or key == "W" then return 17
+    elseif key == "EKey" or key == "E" then return 18
+    elseif key == "RKey" or key == "R" then return 19
+    elseif key == "TKey" or key == "T" then return 20
+    elseif key == "YKey" or key == "Y" then return 21
+    elseif key == "UKey" or key == "U" then return 22
+    elseif key == "IKey" or key == "I" then return 23
+    elseif key == "OKey" or key == "O" then return 24
+    elseif key == "PKey" or key == "P" then return 25
+    elseif key == "LeftSquareBracket" then return 26
+    elseif key == "RightSquareBracket" then return 27
+    elseif key == "Backslash" then return 43
+    elseif key == "Delete" then return 211
+    elseif key == "End" then return 207
+    elseif key == "PageDown" then return 209
+    elseif key == "NumPad7" then return 71
+    elseif key == "NumPad8" then return 72
+    elseif key == "NumPad9" then return 73
+    elseif key == "NumPadPlus" then return 78
+    elseif key == "CapsLock" then return 58
+    elseif key == "AKey" or key == "A" then return 30
+    elseif key == "SKey" or key == "S" then return 31
+    elseif key == "DKey" or key == "D" then return 32
+    elseif key == "FKey" or key == "F" then return 33
+    elseif key == "GKey" or key == "G" then return 34
+    elseif key == "HKey" or key == "H" then return 35
+    elseif key == "JKey" or key == "J" then return 36
+    elseif key == "KKey" or key == "K" then return 37
+    elseif key == "LKey" or key == "L" then return 38
+    elseif key == "SemiColon" then return 39
+    elseif key == "Apostrophe" then return 40
+    elseif key == "Enter" or key == "Return" then return 28
+    elseif key == "NumPad4" then return 75
+    elseif key == "NumPad5" then return 76
+    elseif key == "NumPad6" then return 77
+    elseif key == "LShift" then return 42
+    elseif key == "ZKey" or key == "Z" then return 44
+    elseif key == "XKey" or key == "X" then return 45
+    elseif key == "CKey" or key == "C" then return 46
+    elseif key == "VKey" or key == "V" then return 47
+    elseif key == "BKey" or key == "B" then return 48
+    elseif key == "NKey" or key == "N" then return 49
+    elseif key == "MKey" or key == "M" then return 50
+    elseif key == "Comma" then return 51
+    elseif key == "Period" then return 52
+    elseif key == "Slash" then return 53
+    elseif key == "RShift" then return 54
+    elseif key == "UArrow" then return 200
+    elseif key == "NumPad1" then return 79
+    elseif key == "NumPad2" then return 80
+    elseif key == "NumPad3" then return 81
+    elseif key == "LCtrl" then return 29
+    elseif key == "LSuper" then return 219
+    elseif key == "LAlt" then return 56
+    elseif key == "Space" then return 57
+    elseif key == "RAlt" then return 184
+    elseif key == "RSuper" then return 220
+    elseif key == "Menu" then return 220
+    elseif key == "RCtrl" then return 157
+    elseif key == "LArrow" then return 203
+    elseif key == "DArrow" then return 208
+    elseif key == "RArrow" then return 205
+    elseif key == "NumPad0" then return 82
+    elseif key == "NumPadPeriod" then return 83
+    else mvUI.apiError("MVSOFTWARE_MVCORE","CHECKKEY_INVALID_KEY")
+    end
+end
+
+--Checks for vaild colours, throws an error if colour is invalid. Also has special checks to parse colours from application config files
+function convertColour(fcolour, bcolour)
+   if fcolour == nil then
+      term.setTextColour(colours.white)
+   elseif fcolour == colours.white or fcolour == colours.white or fcolour == 1 then
+      term.setTextColour(colours.white)
+   elseif fcolour == "colours.white" or fcolour == "colors.white" or fcolour == "1" then
+      return colours.white
+   elseif fcolour == colours.orange or fcolour == colors.orange or fcolour == 2 then
+      term.setTextColour(colours.orange)
+   elseif fcolour == "colours.orange" or fcolour == "colors.orange" or fcolour == "2" then
+      return colours.orange
+   elseif fcolour == colours.magenta or fcolour == colors.magenta or fcolour == 4 then
+      term.setTextColour(colours.magenta)
+   elseif fcolour == "colours.magenta" or fcolour == "colors.magenta" or fcolour == "4" then
+      return colours.magenta
+   elseif fcolour == colours.lightBlue or fcolour == colors.lightBlue or fcolour == 8 then
+      term.setTextColour(colours.lightBlue)
+   elseif fcolour == "colours.lightBlue" or fcolour == "colors.lightBlue" or fcolour == "8" then
+      return colours.lightBlue
+   elseif fcolour == colours.yellow or fcolour == colors.yellow or fcolour == 16 then
+      term.setTextColour(colours.yellow)
+   elseif fcolour == "colours.yellow" or fcolour == "colors.yellow" or fcolour == "16" then
+      return colours.yellow
+   elseif fcolour == colours.lime or fcolour == colors.lime or fcolour == 32 then
+      term.setTextColour(colours.lime)
+   elseif fcolour == "colours.lime" or fcolour == "colors.lime" or fcolour == "32" then
+      return colours.lime
+   elseif fcolour == colours.pink or fcolour == colors.pink or fcolour == 64 then
+      term.setTextColour(colours.pink)
+   elseif fcolour == "colours.pink" or fcolour == "colors.pink" or fcolour == "64" then
+      return colours.pink
+   elseif fcolour == colours.grey or fcolour == colors.gray or fcolour == 128 then
+      term.setTextColour(colours.grey)
+   elseif fcolour == "colours.grey" or fcolour == colors.gray or fcolour == "128" then
+      return colours.grey
+   elseif fcolour == colours.lightGrey or fcolour == colors.lightGray or fcolour == 256 then
+      term.setTextColour(colours.lightGrey)
+   elseif fcolour == "colours.lightGrey" or fcolour == "colors.lightGray" or fcolour == "256" then
+      return colours.lightGrey
+   elseif fcolour == colours.cyan or fcolour == colors.cyan or fcolour == 512 then
+      term.setTextColour(colours.cyan)
+   elseif fcolour == "colours.cyan" or fcolour == "colors.cyan" or fcolour == "512" then
+      return colours.cyan
+   elseif fcolour == colours.purple or fcolour == colors.purple or fcolour == 1024 then
+      term.setTextColour(colours.purple)
+   elseif fcolour == "colourspurple" or fcolour == "colors.purple" or fcolour == "1024" then
+      return colours.purple
+   elseif fcolour == colours.blue or fcolour == colors.blue or fcolour == 2048 then
+      term.setTextColour(colours.blue)
+   elseif fcolour == "colours.blue" or fcolour == "colors.blue" or fcolour == "2048" then
+      return colours.blue
+   elseif fcolour == colours.brown or fcolour == colors.brown or fcolour == 4096 then
+      term.setTextColour(colours.brown)
+   elseif fcolour == "colours.brown" or fcolour == "colors.brown" or fcolour == "4096" then
+      return colours.brown
+   elseif fcolour == colours.green or fcolour == colors.green or fcolour == 8192 then
+      term.setTextColour(colours.green)
+   elseif fcolour == "colours.green" or fcolour == "colors.green" or fcolour == "8192" then
+      return colours.green
+   elseif fcolour == colours.red or fcolour == colors.red or fcolour == 16384 then
+      term.setTextColour(colours.red)
+   elseif fcolour == "colours.red" or fcolour == "colors.red" or fcolour == "16384" then
+      return colours.red
+   elseif fcolour == colours.black or fcolour == colors.black or fcolour == 32768 then
+      term.setTextColour(colours.black)
+   elseif fcolour == "colours.black" or fcolour == "colors.black" or fcolour == "32768" then
+      return colours.black
+   else
+      mainError("MVSOFTWARE_MVCORE", "COLOURCHECKER_INVALID_FCOLOUR")
+   end
+   
+   if bcolour == nil then
+      term.setBackgroundColour(colours.black)
+   elseif bcolour == colours.white or bcolour == colours.white or bcolour == 1 then
+      term.setBackgroundColour(colours.white)
+   elseif bcolour == "colours.white" or bcolour == "colors.white" or bcolour == "1" then
+      return colours.white
+   elseif bcolour == colours.orange or bcolour == colors.orange or bcolour == 2 then
+      term.setBackgroundColour(colours.orange)
+   elseif bcolour == "colours.orange" or bcolour == "colors.orange" or bcolour == "2" then
+      return colours.orange
+   elseif bcolour == colours.magenta or bcolour == colors.magenta or bcolour == 4 then
+      term.setBackgroundColour(colours.magenta)
+   elseif bcolour == "colours.magenta" or bcolour == "colors.magenta" or bcolour == "4" then
+      return colours.magenta
+   elseif bcolour == colours.lightBlue or bcolour == colors.lightBlue or bcolour == 8 then
+      term.setBackgroundColour(colours.lightBlue)
+   elseif bcolour == "colours.lightBlue" or bcolour == "colors.lightBlue" or bcolour == "8" then
+      return colours.lightBlue
+   elseif bcolour == colours.yellow or bcolour == colors.yellow or bcolour == 16 then
+      term.setBackgroundColour(colours.yellow)
+   elseif bcolour == "colours.yellow" or bcolour == "colors.yellow" or bcolour == "16" then
+      return colours.yellow
+   elseif bcolour == colours.lime or bcolour == colors.lime or bcolour == 32 then
+      term.setBackgroundColour(colours.lime)
+   elseif bcolour == "colours.lime" or bcolour == "colors.lime" or bcolour == "32" then
+      return colours.lime
+   elseif bcolour == colours.pink or bcolour == colors.pink or bcolour == 64 then
+      term.setBackgroundColour(colours.pink)
+   elseif bcolour == "colours.pink" or bcolour == "colors.pink" or bcolour == "64" then
+      return colours.pink
+   elseif bcolour == colours.grey or bcolour == colors.gray or bcolour == 128 then
+      term.setBackgroundColour(colours.grey)
+   elseif bcolour == "colours.grey" or bcolour == "colors.gray" or bcolour == "128" then
+      return colours.grey
+   elseif bcolour == colours.lightGrey or bcolour == colors.lightGray or bcolour == 256 then
+      term.setBackgroundColour(colours.lightGrey)
+   elseif bcolour == "colours.lightGrey" or bcolour == "colors.lightGray" or bcolour == "256" then
+      return colours.lightGrey
+   elseif bcolour == colours.cyan or bcolour == colors.cyan or bcolour == 512 then
+      term.setBackgroundColour(colours.cyan)
+   elseif bcolour == "colours.cyan" or bcolour == "colors.cyan" or bcolour == "512" then
+      return colours.cyan
+   elseif bcolour == colours.purple or bcolour == colors.purple or bcolour == 1024 then
+      term.setBackgroundColour(colours.purple)
+   elseif bcolour == "colours.purple" or bcolour == "colors.purple" or bcolour == "1024" then
+      return colours.purple
+   elseif bcolour == colours.blue or bcolour == colors.blue or bcolour == 2048 then
+      term.setBackgroundColour(colours.blue)
+   elseif bcolour == "colours.blue" or bcolour == "colors.blue" or bcolour == "2048" then
+      return colours.blue
+   elseif bcolour == colours.brown or bcolour == colors.brown or bcolour == 4096 then
+      term.setBackgroundColour(colours.brown)
+   elseif bcolour == "colours.brown" or bcolour == "colors.brown" or bcolour == "4096" then
+      return colours.brown
+   elseif bcolour == colours.green or bcolour == colors.green or bcolour == 8192 then
+      term.setBackgroundColour(colours.green)
+   elseif bcolour == "colours.green" or bcolour == "colors.green" or bcolour == "8192" then
+      return colours.green
+   elseif bcolour == colours.red or bcolour == colors.red or bcolour == 16384 then
+      term.setBackgroundColour(colours.red)
+   elseif bcolour == "colours.red" or bcolour == "colors.red" or bcolour == "16384" then
+      return colours.red
+   elseif bcolour == colours.black or bcolour == colors.black or bcolour == 32768 then
+      term.setBackgroundColour(colours.black)
+   elseif bcolour == "colours.black" or bcolour == "colors.black" or bcolour == "32768" then
+      return colours.black
+   else
+      mainError("MVSOFTWARE_MVCORE", "COLOURCHECKER_INVALID_BCOLOUR")
+   end
+end

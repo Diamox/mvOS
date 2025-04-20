@@ -1,0 +1,13 @@
+{
+  appData = {
+    appName = "Introducing NetSuite",
+    appVersion = "0.1",
+    appBuild = "20200814",
+    appDeveloper = "mvSoftware",
+  },
+
+  uiData = {
+	appNameColour = "colours.blue",
+	appNameColourDark = "colours.lightBlue",
+  },
+}

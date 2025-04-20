@@ -1,0 +1,11 @@
+{
+	title = "mvCore ProShell",
+	version = "1.0",
+	build = "2",
+	cursor = ":> ",
+	titleCol = 128,
+	titleTextCol = 256,
+	backCol = 32768,
+	textCol = 1,
+	cursorCol = 256,
+}

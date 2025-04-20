@@ -1,0 +1,27 @@
+{
+  appData = {
+    appName = "File Browser",
+    appVersion = "1.1",
+    appBuild = "20210826",
+    appDeveloper = "mvSoftware",
+  },
+
+  uiData = {
+	appNameColour = "colours.black",
+	appNameColourDark = "colours.white",
+    sidebarColour = "colours.lightGrey",
+    sidebarTextColour = "colours.black",
+    sidebarTextColourHighlight = "colours.black",
+    sidebarColourDark = "colours.grey",
+    sidebarTextColourDark = "colours.white",
+    sidebarTextColourDarkHighlight = "colours.white",
+  },
+  
+  tabData = {
+    tab1 = "",
+    tab2 = "",
+    tab3 = "",
+    tab4 = "",
+    tab5 = "",
+  },
+}

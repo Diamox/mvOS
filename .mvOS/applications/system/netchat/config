@@ -1,0 +1,13 @@
+{
+  appData = {
+    appName = "NetChat",
+    appVersion = "1.1",
+    appBuild = "20210911",
+    appDeveloper = "mvSoftware",
+  },
+
+  uiData = {
+	appNameColour = "colours.green",
+	appNameColourDark = "colours.green",
+  },
+}

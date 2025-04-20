@@ -1,0 +1,44 @@
+--Interface
+function UI()
+	mvUI.basicUI(".system/desktop/oobe/promo_netsuite/config",true)
+	if settingsTable.isDarkMode == true then
+		mvText.dPrint("NetSuite is a package of applications that", nil, nil, 4, 4, 1, colours.black)
+		mvText.dPrint("takes advantage of Rednet and HTML networking.", nil, nil, 4, 5, 1, colours.black)
+		mvText.dPrint("NetApps - Apps over Rednet", nil, nil, 4, 9, colours.red, colours.black)
+		mvText.dPrint("NetChat - Staying social", nil, nil, 4, 12, colours.green, colours.black)
+		mvText.dPrint("NetInfo - Get answers online", nil, nil, 4, 15, colours.orange, colours.black)
+		mvText.dPrint("Run small apps from another PC", nil, nil, 4, 10, 1, colours.black)
+		mvText.dPrint("Talk to people through private rooms", nil, nil, 4, 13, 1, colours.black)
+		mvText.dPrint("Get answers and information instantly", nil, nil, 4, 16, 1, colours.black)
+	else
+		mvText.dPrint("NetSuite is a package of applications that", nil, nil, 4, 4, colours.black, 1)
+		mvText.dPrint("takes advantage of Rednet and HTML networking", nil, nil, 4, 5, colours.black, 1)
+		mvText.dPrint("NetApps - Apps over Rednet", nil, nil, 4, 9, colours.red, 1)
+		mvText.dPrint("NetChat - Staying social", nil, nil, 4, 12, colours.green, 1)
+		mvText.dPrint("NetInfo - Get answers online", nil, nil, 4, 15, colours.orange, 1)
+		mvText.dPrint("Run small apps from another PC", nil, nil, 4, 10, colours.black, 1)
+		mvText.dPrint("Talk to people through private rooms", nil, nil, 4, 13, colours.black, 1)
+		mvText.dPrint("Get answers and information instantly", nil, nil, 4, 16, colours.black, 1)
+	end
+	Click()
+end
+
+--Response
+function Click()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			sleep()
+			break
+		end
+	end
+end
+end
+
+UI()

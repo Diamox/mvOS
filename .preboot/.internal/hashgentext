@@ -1,0 +1,15 @@
+mvCore.displayReset()
+mvCore.dPrint("mvToolkit Hash Generator", nil, nil, 1, 1, colours.white, colours.black)
+mvCore.dPrint("Enter text to hash: ", nil, nil, 1, 2, colours.white, colours.black)
+
+local texttohash = read()
+
+if texttohash ~= nil then
+    local hash = mvCore.generateTextHash(texttohash, "return")
+    local hashoutput = fs.open(".devtools/texthashoutput", "a")
+    hashoutput.writeLine(texttohash..": "..hash)
+    hashoutput.close()
+    mvCore.dPrint("File exists, hash written to file", "print", nil, 1, 3, colours.white, colours.black)
+else
+    mvCore.dPrint("File does not exist", "print", nil, 1, 3, colours.white, colours.black)
+end

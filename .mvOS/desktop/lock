@@ -1,0 +1,174 @@
+--Power Off Function
+function shutdownUI()
+	runClockUpdate = false
+	if settingsTable.isDarkMode == true then
+		paintutils.drawFilledBox(1, 1, 51, 19, 128)
+		sleep()
+		paintutils.drawFilledBox(1, 1, 51, 19, colours.black)
+		sleep(0.1)
+	else
+		paintutils.drawFilledBox(1, 1, 51, 19, colours.lightBlue)
+		sleep(0.3)
+		paintutils.drawFilledBox(1, 1, 51, 19, 256)
+		sleep()
+		paintutils.drawFilledBox(1, 1, 51, 19, 128)
+		sleep()
+		paintutils.drawFilledBox(1, 1, 51, 19, colours.black)
+		sleep(0.1)
+	end
+	os.shutdown()
+end
+
+--load user info
+local function loadInfo()
+	local loadUserInfo = fs.open(".system/users/.user1/.config", "r")
+	local userData = loadUserInfo.readAll()
+	loadUserInfo.close()
+	systemUser = textutils.unserialise(userData)
+	local loadSettings = fs.open(".system/users/.user1/settings", "r")
+	local settingsData = loadSettings.readAll()
+	loadSettings.close()
+	settingsTable = textutils.unserialise(settingsData)
+end
+
+--Sort username out
+if string.len(systemUser.username) > 33 then
+	userDisplayName = string.sub(systemUser.username, 1, 30).."..."
+else
+	userDisplayName = string.sub(systemUser.username, 1, 33)
+end
+
+--Sort hint out
+if string.len(systemUser.hint) > 33 then
+	userDisplayHint = string.sub(systemUser.hint, 1, 30).."..."
+else
+	userDisplayHint = string.sub(systemUser.hint, 1, 33)
+end
+
+--Interface
+function loginUI()
+	loadInfo()
+	if settingsTable.isDarkMode then
+		--Background wallpaper
+		if fs.exists(settingsTable.bgImage.."_dm") then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage.."_dm"), 1, 1)
+		elseif fs.exists(settingsTable.bgImage) then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+		else
+			term.setBackgroundColour(colours.lightBlue)
+			term.clear()
+		end
+		paintutils.drawFilledBox(3, 14, 49, 18, colours.black)
+		mvText.dPrint(userDisplayName, nil, nil, 4, 15, 1, colours.black)
+		mvText.dPrint(userDisplayHint, nil, nil, 4, 17, 256, colours.black)
+		if systemUser.password == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" then
+			mvText.dPrint("Sign in >", nil, nil, 39, 15, 1, colours.black)
+		else
+			if passWrong == true then
+				mvText.dPrint("Password>", nil, nil, 39, 15, colours.red, colours.black)
+			else
+				mvText.dPrint("Password>", nil, nil, 39, 15, 1, colours.black)
+			end
+		end
+		mvText.dPrint("Shut down", nil, nil, 39, 17, 1, colours.black)
+	else
+		--Background wallpaper
+		if fs.exists(settingsTable.bgImage) then
+			paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+		else
+			term.setBackgroundColour(colours.lightBlue)
+			term.clear()
+		end
+		paintutils.drawFilledBox(3, 14, 49, 18, 1)
+		mvText.dPrint(userDisplayName, nil, nil, 4, 15, colours.black, 1)
+		mvText.dPrint(userDisplayHint, nil, nil, 4, 17, 128, 1)
+		if systemUser.password == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" then
+			mvText.dPrint("Sign in >", nil, nil, 39, 15, colours.black, 1)
+		else
+			if passWrong == true then
+				mvText.dPrint("Password>", nil, nil, 39, 15, colours.red, 1)
+			else
+				mvText.dPrint("Password>", nil, nil, 39, 15, colours.black, 1)
+			end
+		end
+		mvText.dPrint("Shut down", nil, nil, 39, 17, colours.black, 1)
+	end
+	passWrong = nil
+	loginClick()
+end
+
+function loginClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 39 and X <= 47 and Y == 15 then
+			if systemUser.password == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" then
+				break
+			else
+				if settingsTable.isAnimated then
+					if settingsTable.isDarkMode then
+						mvText.dPrint(">         ", "s", nil, 39, 15, 1, colours.black)
+					else
+						mvText.dPrint(">         ", "s", nil, 39, 15, colours.black, 1)
+					end
+				else
+					if settingsTable.isDarkMode then
+						mvText.dPrint(">         ", nil, nil, 39, 15, 1, colours.black)
+					else
+						mvText.dPrint(">         ", nil, nil, 39, 15, colours.black, 1)
+					end
+				end
+				term.setCursorPos(41, 15)
+				passwordInput = mvText.mvRead("\7",nil,9)
+				if mvSecurity.validateTextHash(passwordInput, systemUser.password) then
+					break
+				else
+					passWrong = true
+					loginUI()
+					break
+				end
+			end
+		end
+		if X >= 39 and X <= 47 and Y == 17 then
+			shutdownUI()
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("Return") then
+			if systemUser.password == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" then
+				break
+			else
+				if settingsTable.isAnimated then
+					if settingsTable.isDarkMode then
+						mvText.dPrint(">         ", "s", nil, 39, 15, 1, colours.black)
+					else
+						mvText.dPrint(">         ", "s", nil, 39, 15, colours.black, 1)
+					end
+				else
+					if settingsTable.isDarkMode then
+						mvText.dPrint(">         ", nil, nil, 39, 15, 1, colours.black)
+					else
+						mvText.dPrint(">         ", nil, nil, 39, 15, colours.black, 1)
+					end
+				end
+				term.setCursorPos(41, 15)
+				passwordInput = mvText.mvRead("\7",nil,9)
+				if mvSecurity.validateTextHash(passwordInput, systemUser.password) then
+					break
+				else
+					passWrong = true
+					loginUI()
+					break
+				end
+			end
+		end
+		if key == mvExtras.keyMapper("S") then
+			shutdownUI()
+			break
+		end
+	end
+end
+end
+
+loginUI()

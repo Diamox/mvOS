@@ -1,0 +1,193 @@
+--This function will print text which is center aligned on the defined line, can only be called through dPrint() with the c modifier
+local function cPrint(text, yp)
+   x, y = term.getSize()
+   cx = math.ceil((x/2)-(string.len(text)/2))
+   if yp == nil then
+      x2, y2 = term.getCursorPos()
+      term.setCursorPos(cx, y2)
+      write(text)
+   else
+      term.setCursorPos(cx, yp)
+      write(text)
+   end
+ return true
+end
+
+--This function will slow print text which is center aligned on the defined line, can only be called through dPrint() with the cs modifier
+local function cSlowPrint(text, text2, yp)
+   x, y = term.getSize()
+   cx = math.ceil((x/2)-(string.len(text)/2))
+   if yp == nil then
+   x2, y2 = term.getCursorPos()
+   term.setCursorPos(cx, y2)
+   if text2 == nil then
+      textutils.slowWrite(text)
+   else
+      textutils.slowWrite(text,text2)
+   end
+   else
+      term.setCursorPos(cx, yp)
+   if text2 == nil then
+      textutils.slowWrite(text)
+   else
+      textutils.slowWrite(text,text2)
+   end
+   end
+   return true
+end
+
+--This function allows you to declare extra paramaters when printing text
+function dPrint(text, modifier, speed, xloc, yloc, fcolour, bcolour)
+    mvExtras.convertColour(fcolour, bcolour)
+    if xloc > 51 or xloc < 0 then mvUI.mainError("MVSOFTWARE_MVCORE", "DPRINT_XLOC_OUTOFBOUNDS") end
+    if yloc > 19 or yloc < 0 then mvUI.mainError("MVSOFTWARE_MVCORE", "DPRINT_YLOC_OUTOFBOUNDS") end
+    if modifier == nil then
+         term.setCursorPos(xloc, yloc)
+         write(text)
+      elseif modifier == "c" or modifier == "center" then
+         cPrint(text, yloc)
+      elseif modifier == "s" or modifer == "slow" then
+         term.setCursorPos(xloc, yloc)
+         textutils.slowWrite(text, speed)
+      elseif modifier == "cs" or modifier == "centerslow" then
+         cSlowPrint(text, speed, yloc)
+      elseif modifier == "p" or modifier == "print" then
+        term.setCursorPos(xloc, yloc)
+        print(text)
+      else
+         mainError("MVSOFTWARE_MVCORE", "DPRINT_INVALID_MODIFIER")
+   end  
+end
+
+--Modified read function that allows for setting a barrier for the text
+function mvRead( _sReplaceChar, _tHistory,_wdth)
+	local sLine = ""
+	cursorPos = 0
+	term.setCursorBlink( true )
+
+	local nHistoryPos = nil
+	local nPos = 0
+    if _sReplaceChar then
+		_sReplaceChar = string.sub( _sReplaceChar, 1, 1 )
+	end
+	
+	local sx, sy = term.getCursorPos()	
+
+	local w, h = term.getSize()
+	if _wdth and type(_wdth) == "number" then
+		w = sx + _wdth - 1
+	end
+	
+	local function redraw( _sCustomReplaceChar )
+		local nScroll = 0
+		if sx + nPos >= w then
+			nScroll = (sx + nPos) - w
+		end
+			
+		term.setCursorPos( sx + _wdth - 1, sy )
+		term.write(" ")
+		term.setCursorPos( sx, sy )
+		local sReplace = _sCustomReplaceChar or _sReplaceChar
+		if sReplace then
+			term.write( string.sub( string.rep(sReplace,cursorPos), nScroll + 1 ,nScroll + _wdth) )
+		else
+			term.write( string.sub( sLine, nScroll + 1 ,nScroll + _wdth) )
+		end
+		term.setCursorPos( sx + nPos - nScroll, sy )
+	end
+	
+	while true do
+		local sEvent, param = os.pullEvent()
+		if sEvent == "char" then
+			sLine = string.sub( sLine, 1, nPos ) .. param .. string.sub( sLine, nPos + 1 )
+			nPos = nPos + 1
+			cursorPos = cursorPos + 1
+			redraw()
+			
+		elseif sEvent == "key" then
+			
+			if param == keys.left then
+				-- Left
+				if nPos > 0 then
+					nPos = nPos - 1
+					redraw()
+				end
+				
+			elseif param == keys.right then
+				-- Right				
+				if nPos < string.len(sLine) then
+					nPos = nPos + 1
+					redraw()
+				end
+			
+			elseif param == keys.up or param == keys.down then
+                -- Up or down
+				if _tHistory then
+					redraw(" ");
+					if param == keys.up then
+						-- Up
+						if nHistoryPos == nil then
+							if #_tHistory > 0 then
+								nHistoryPos = #_tHistory
+							end
+						elseif nHistoryPos > 1 then
+							nHistoryPos = nHistoryPos - 1
+						end
+					else
+						-- Down
+						if nHistoryPos == #_tHistory then
+							nHistoryPos = nil
+						elseif nHistoryPos ~= nil then
+							nHistoryPos = nHistoryPos + 1
+						end						
+					end
+					
+					if nHistoryPos then
+                    	sLine = _tHistory[nHistoryPos]
+                    	nPos = string.len( sLine ) 
+                    else
+						sLine = ""
+						nPos = 0
+					end
+					redraw()
+                end
+			elseif param == keys.backspace then
+				-- Backspace
+				if nPos > 0 then
+					redraw(" ");
+					sLine = string.sub( sLine, 1, nPos - 1 ) .. string.sub( sLine, nPos + 1 )
+					nPos = nPos - 1
+					cursorPos = cursorPos - 1
+					redraw()
+				end
+			elseif param == keys.home then
+				-- Home
+				nPos = 0
+				redraw()		
+			elseif param == keys.delete then
+				if nPos < string.len(sLine) then
+					redraw(" ");
+					sLine = string.sub( sLine, 1, nPos ) .. string.sub( sLine, nPos + 2 )
+					cursorPos = cursorPos - 1
+					redraw()
+				end
+			elseif param == keys["end"] then
+				-- End
+				nPos = string.len(sLine)
+				redraw()
+			elseif param == keys.enter then
+				term.setCursorBlink( false )
+				return sLine
+			end
+		elseif sEvent == "redraw" then
+			redraw()
+		elseif sEvent == "return" then
+			term.setCursorBlink( false )
+			return sLine
+		end
+	end
+	
+	term.setCursorBlink( false )
+	
+	return sLine
+end

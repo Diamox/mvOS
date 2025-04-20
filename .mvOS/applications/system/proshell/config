@@ -1,0 +1,11 @@
+{
+	title = "mvOS ProShell",
+	version = "1.0.1",
+	build = "4",
+	cursor = ":> ",
+	titleCol = 128,
+	titleTextCol = 8192,
+	backCol = 32768,
+	textCol = 1,
+	cursorCol = 8192,
+}

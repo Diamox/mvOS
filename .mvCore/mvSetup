@@ -1,0 +1,196 @@
+--Load boot config
+local function loadcfg()
+	local loadBoot = fs.open(".preboot/cfg/.config", "r")
+	local bootInfo = loadBoot.readAll()
+	loadBoot.close()
+	bootcfg = textutils.unserialise(bootInfo)
+end
+
+--Save Settings
+local function savecfg()
+	local bootOpen = fs.open(".preboot/cfg/.config", "w")
+	local bootWrite = bootOpen.write(textutils.serialise(bootcfg))
+	bootOpen.close()
+end
+
+--Render Base UI
+paintutils.drawFilledBox(1, 1, 51, 1, colours.blue)
+paintutils.drawFilledBox(1, 19, 51, 19, colours.blue)
+paintutils.drawFilledBox(1, 2, 51, 18, colours.white)
+paintutils.drawLine(13, 2, 13, 18, colours.lightGrey)
+
+mvText.dPrint("System", nil, nil, 2, 3, colours.grey, colours.white)
+mvText.dPrint("Version", nil, nil, 2, 5, colours.grey, colours.white)
+mvText.dPrint("Settings", nil, nil, 2, 7, colours.grey, colours.white)
+mvText.dPrint("Exit", nil, nil, 2, 17, colours.grey, colours.white)
+
+mvText.dPrint("mvCore Setup Utility", nil, nil, 1, 1, colours.white, colours.blue)
+mvText.dPrint(mvExtras.copyright(), nil, nil, 1, 19, colours.white, colours.blue)
+
+--Tab Highlight Functions
+local function systemHighlight()
+    mvText.dPrint("System", nil, nil, 2, 3, colours.black, colours.white)
+    mvText.dPrint("Version", nil, nil, 2, 5, colours.grey, colours.white)
+    mvText.dPrint("Settings", nil, nil, 2, 7, colours.grey, colours.white)
+    mvText.dPrint("Exit", nil, nil, 2, 17, colours.grey, colours.white)
+end
+
+local function versionHighlight()
+    mvText.dPrint("System", nil, nil, 2, 3, colours.grey, colours.white)
+    mvText.dPrint("Version", nil, nil, 2, 5, colours.black, colours.white)
+    mvText.dPrint("Settings", nil, nil, 2, 7, colours.grey, colours.white)
+    mvText.dPrint("Exit", nil, nil, 2, 17, colours.grey, colours.white)
+end
+
+local function settingsHighlight()
+    mvText.dPrint("System", nil, nil, 2, 3, colours.grey, colours.white)
+    mvText.dPrint("Version", nil, nil, 2, 5, colours.grey, colours.white)
+    mvText.dPrint("Settings", nil, nil, 2, 7, colours.black, colours.white)
+    mvText.dPrint("Exit", nil, nil, 2, 17, colours.grey, colours.white)
+end
+
+local function exitHighlight()
+    mvText.dPrint("System", nil, nil, 2, 3, colours.grey, colours.white)
+    mvText.dPrint("Version", nil, nil, 2, 5, colours.grey, colours.white)
+    mvText.dPrint("Settings", nil, nil, 2, 7, colours.grey, colours.white)
+    mvText.dPrint("Exit", nil, nil, 2, 17, colours.black, colours.white)
+end
+
+--Draw System Tab
+local function systemTab()
+    activetab = 1
+    paintutils.drawFilledBox(14, 3, 50, 17, colours.white)
+    
+    mvText.dPrint("System Information", nil, nil, 15, 3, 2048, colours.white)
+    mvText.dPrint("PC ID        | "..os.getComputerID(), nil, nil, 15, 4, colours.black, colours.white)
+    mvText.dPrint("PC Label     | "..os.getComputerLabel(), nil, nil, 15, 5, colours.black, colours.white)
+    mvText.dPrint("CC Version   | "..os.version(), nil, nil, 15, 6, colours.black, colours.white)
+
+    mvText.dPrint("Disk Information", nil, nil, 15, 8, 2048, colours.white)
+    mvText.dPrint("Free Space   | ", nil, nil, 15, 9, colours.black, colours.white)
+	mvExtras.remainingSpace("/")
+end
+
+--Draw Version Tab
+local function versionTab()
+    activetab = 2
+    paintutils.drawFilledBox(14, 3, 50, 17, colours.white)
+	
+	systemInfo = {version, build, codename, release}
+	
+	systemInfo.version = "nil"
+	systemInfo.build = "nil"
+	systemInfo.codename = "nil"
+	systemInfo.release = "nil"
+	
+	if fs.exists(".system/sysinfo") then
+		local loadConfig = fs.open(".system/sysinfo", "r")
+		local configData = loadConfig.readAll()
+		loadConfig.close()
+		systemInfo = textutils.unserialise(configData)
+	end
+    
+    mvText.dPrint("mvCore Information", nil, nil, 15, 3, 2048, colours.white)
+    mvText.dPrint("Version      | "..mvCore.version(), nil, nil, 15, 4, colours.black, colours.white)
+    mvText.dPrint("Build        | "..mvCore.build(), nil, nil, 15, 5, colours.black, colours.white)
+    mvText.dPrint("Codename     | "..mvCore.codename(), nil, nil, 15, 6, colours.black, colours.white)
+    mvText.dPrint("Release Date | "..mvCore.release(), nil, nil, 15, 7, colours.black, colours.white)
+
+    mvText.dPrint("Extended OS Information", nil, nil, 15, 9, 2048, colours.white)
+    mvText.dPrint("Version      | "..systemInfo.version, nil, nil, 15, 10, colours.black, colours.white)
+    mvText.dPrint("Build        | "..systemInfo.build, nil, nil, 15, 11, colours.black, colours.white)
+    mvText.dPrint("Codename     | "..systemInfo.codename, nil, nil, 15, 12, colours.black, colours.white)
+    mvText.dPrint("Release Date | "..systemInfo.release, nil, nil, 15, 13, colours.black, colours.white)
+end
+
+--Draw Settings Tab
+local function settingsTab()
+	loadcfg()
+    activetab = 3
+    paintutils.drawFilledBox(14, 3, 50, 17, colours.white)
+    mvText.dPrint("mvCore Configuration", nil, nil, 15, 3, 2048, colours.white)
+    mvText.dPrint("Auto boot Extended OS", nil, nil, 15, 6, colours.blue, colours.white)
+    mvText.dPrint("Start a system on top of mvCore", nil, nil, 15, 7, colours.black, colours.white)
+    mvText.dPrint("Extended OS bootloader", nil, nil, 15, 9, colours.blue, colours.white)
+    mvText.dPrint(string.sub(bootcfg.extOSBootDir,1,30), nil, nil, 15, 10, colours.black, colours.white)
+	if bootcfg.autoStartExtOS == true then
+		mvText.dPrint(" ", nil, nil, 50, 6, colours.blue, colours.blue)
+	else
+		mvText.dPrint(" ", nil, nil, 50, 6, colours.grey, colours.grey)
+	end
+	mvText.dPrint("<", nil, nil, 50, 9, 1, colours.blue)
+end
+
+--Draw Exit Tab
+local function exitTab()
+    activetab = 4
+    paintutils.drawFilledBox(14, 3, 50, 17, colours.white)
+
+    mvText.dPrint("Exit mvSetup", nil, nil, 15, 3, 2048, colours.white)
+    mvText.dPrint("Hit [DEL] to reboot the system", nil, nil, 15, 4, colours.black, colours.white)
+    mvText.dPrint("Hit [END] to shutdown the system", nil, nil, 15, 5, colours.black, colours.white)
+end
+
+systemTab()
+systemHighlight()
+
+while true do
+    local sEvent, param = os.pullEvent("key")
+    if sEvent == "key" then
+        if param == mvExtras.keyMapper("DArrow") then
+            if activetab == 4 then
+                activetab = 4
+            else
+                activetab = activetab + 1
+            end
+        elseif param == mvExtras.keyMapper("UArrow") then
+            if activetab == 1 then
+                activetab = 1
+            else
+                activetab = activetab - 1
+            end
+        elseif param == mvExtras.keyMapper("Delete") then
+            if activetab == 4 then
+                os.reboot()
+            end
+        elseif param == mvExtras.keyMapper("End") then
+            if activetab == 4 then
+                os.shutdown()
+            end
+		elseif param == mvExtras.keyMapper("1") then
+			if activetab == 3 then
+				if bootcfg.autoStartExtOS == true then
+					bootcfg.autoStartExtOS = false
+				else
+					bootcfg.autoStartExtOS = true
+				end
+				savecfg()
+			end
+		elseif param == mvExtras.keyMapper("2") then
+			if activetab == 3 then
+				sleep()
+				paintutils.drawLine(15, 10, 50, 10, 1)
+				term.setCursorPos(15, 10)
+				write("> ")
+				newLoader = read()
+				if fs.exists(newLoader) then
+					bootcfg.extOSBootDir = newLoader
+				end
+				savecfg()
+			end
+        end
+    end
+    if activetab == 1 then
+        systemTab()
+        systemHighlight()
+    elseif activetab == 2 then
+        versionTab()
+        versionHighlight()
+    elseif activetab == 3 then
+        settingsTab()
+        settingsHighlight()
+    elseif activetab == 4 then
+        exitTab()
+        exitHighlight()
+    end
+end

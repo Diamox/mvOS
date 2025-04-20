@@ -1,0 +1,168 @@
+--Variables
+local tArgs = {...}
+
+function firstUI(skipinput)
+	--Draw interface
+	paintutils.drawFilledBox(1, 1, 51, 19, 1)
+	mvCore.dPrint("Install mvOS", nil, nil, 2, 1, colours.green, 1)
+	mvCore.dPrint("What do you want to do?", nil, nil, 3, 5, colours.green, 1)
+	mvCore.dPrint("mvCore will be installed if it isn't already", nil, nil, 3, 6, colours.black, 1)
+	mvCore.dPrint(" Install ", nil, nil, 4, 14, 1, 128)
+	mvCore.dPrint(" Return  ", nil, nil, 4, 16, 1, 128)
+	mvCore.dPrint("- Copies mvOS to your computer", nil, nil, 14, 14, colours.black, 1)
+	mvCore.dPrint("- Go back to the previous menu", nil, nil, 14, 16, colours.black, 1)
+	if skipinput == "unattended" then
+		install(false, true)
+	elseif skipinput == "unattended-nomvcore" then
+		install(true, true)
+	else
+		getResponseUI()
+	end
+end
+
+--Install function
+function install(skipmvcore, autocont)
+	paintutils.drawFilledBox(1, 2, 51, 19, 1)
+	
+	if skipmvcore == false or skipmvcore == nil then
+		--- Install mvCore ---
+		mvCore.dPrint("Installing mvCore first", "s", nil, 3, 8, colours.black, 1)
+		shell.run("disk/.install/instmvcore unattended")
+		paintutils.drawFilledBox(1, 2, 33, 19, 1)
+	end
+	
+	--- Remove old files ---
+	mvCore.dPrint("Getting ready to install", "s", nil, 3, 7, colours.black, 1)
+	if fs.exists(".system/applications") then
+		fs.delete(".system/applications")
+	end
+	if fs.exists(".system/desktop") then
+		fs.delete(".system/desktop")
+	end
+	if fs.exists(".system/sysinfo") then
+		fs.delete(".system/sysinfo")
+	end
+	if fs.exists(".system/sysload") then
+		fs.delete(".system/sysload")
+	end
+	
+	--- Copy sysload and sysinfo ---
+	mvCore.dPrint("Installing mvLoader", "s", nil, 3, 8, colours.black, 1)
+	if fs.exists("disk/.mvOS/sysload") then
+		if not mvCore.validateHash("disk/.mvOS/sysload","e1a198c920dcfb66fa91f6bc2c0006b00fc9f27758bb702ff86d1d8fb1019c6d") then
+			mvCore.fileError("disk/.mvOS/sysload","corrupt")
+		end
+		fs.copy("disk/.mvOS/sysload",".system/sysload")
+	else
+		mvCore.fileError("disk/.mvOS/sysload","missing")
+	end
+	sleep()
+	if fs.exists("disk/.mvOS/sysinfo") then
+		if not mvCore.validateHash("disk/.mvOS/sysinfo","6d8effc28d5b29793b6d4c82fd09bdbf16c523d120dc5014fd4e12e0c0a56710") then
+			mvCore.fileError("disk/.mvOS/sysinfo","corrupt")
+		end
+		fs.copy("disk/.mvOS/sysinfo",".system/sysinfo")
+	else
+		mvCore.fileError("disk/.mvOS/sysinfo","missing")
+	end
+	sleep()
+	
+	--- Copy .system/desktop ---
+	mvCore.dPrint("Installing mvOS Desktop", "s", nil, 3, 9, colours.black, 1)
+	--Hash check the desktop file itself
+	if fs.exists("disk/.mvOS/desktop/desktop") then
+		if not mvCore.validateHash("disk/.mvOS/desktop/desktop", "f52f6ebecc21b4766104ab4a70306b4662c9ef09279b7670edcc44024690f3f9") then
+			mvCore.fileError("disk/.mvOS/desktop/desktop","corrupt")
+		end
+	else
+		mvCore.fileError("disk/.mvOS/desktop/desktop","missing")
+	end
+	sleep(0)
+	--Hash check LockUI
+	if fs.exists("disk/.mvOS/desktop/lock") then
+		if not mvCore.validateHash("disk/.mvOS/desktop/lock", "a044c114eb31ceae253216f5375131f3c4b7c5ec0dd0cf435f625e7754b76d81") then
+			mvCore.fileError("disk/.mvOS/desktop/lock","corrupt")
+		end
+	else
+		mvCore.fileError("disk/.mvOS/desktop/lock","missing")
+	end
+	sleep()
+	--Copy it all over
+	if not fs.exists(".system/users/.user1") then
+		fs.copy("disk/.mvOS/users/.user1",".system/users/.user1")
+	end
+	fs.copy("disk/.mvOS/desktop",".system/desktop")
+	
+	--- Copy .system/applications ---
+	mvCore.dPrint("Copying over applications", "s", nil, 3, 10, colours.black, 1)
+	fs.copy("disk/.mvOS/applications",".system/applications")
+	
+	--- Copy .system/documents ---
+	mvCore.dPrint("Setting up documents", "s", nil, 3, 11, colours.black, 1)
+	if not fs.exists(".system/documents") then
+		fs.copy("disk/.mvOS/documents",".system/documents")
+	else
+		if fs.exists(".system/documents/changelog") then
+			fs.delete(".system/documents/changelog")
+			fs.copy("disk/.mvOS/documents/changelog",".system/documents/changelog")
+		else
+			fs.copy("disk/.mvOS/documents/changelog",".system/documents/changelog")
+		end
+	end
+	if autocont == true then
+		mvCore.dPrint("Preparing to restart...", nil, nil, 3, 14, colours.black, 1)
+		sleep(1)
+		disk.eject(mvCore.diskGetSide())
+		os.reboot()
+	else
+		mvCore.dPrint("Successfully installed mvOS!", "s", nil, 3, 14, colours.black, 1)
+		mvCore.dPrint(" Reboot ", nil, nil, 4, 16, 1, 128)
+		mvCore.dPrint(" Return ", nil, nil, 14, 16, 1, 128)
+		getLastResponseUI()
+	end
+end
+
+--Get keys
+function getResponseUI()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 4 and X <= 12 and Y == 14 then
+			install()
+			break
+		end
+		if X >= 4 and X <= 12 and Y == 16 then
+			bootManager()
+			break
+		end
+	end
+end
+end
+
+--Get last keys
+function getLastResponseUI()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 4 and X <= 11 and Y == 16 then
+			disk.eject(mvCore.diskGetSide())
+			os.reboot()
+			break
+		end
+		if X >= 14 and X <= 21 and Y == 16 then
+			bootManager()
+			break
+		end
+	end
+end
+end
+
+--Do tArgs thing
+local getArgs = tArgs[1]
+if getArgs == "unattended" then
+	firstUI("unattended")
+elseif getArgs == "unattended-nomvcore" then
+	firstUI("unattended-nomvcore")
+else
+	firstUI()
+end

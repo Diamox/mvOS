@@ -1,0 +1,24 @@
+{
+  appData = {
+    appName = "mvPlayer",
+    appVersion = "0.2",
+    appBuild = "20210328",
+    appDeveloper = "mvSoftware",
+  },
+
+  uiData = {
+	appNameColour = "colours.white",
+	appNameColourDark = "colours.white",
+    sidebarColour = "colours.green",
+    sidebarTextColour = "colours.grey",
+    sidebarTextColourHighlight = "colours.white",
+    sidebarColourDark = "colours.grey",
+    sidebarTextColourDark = "colours.black",
+    sidebarTextColourDarkHighlight = "colours.white",
+  },
+  
+  tabData = {
+    tab1 = "Disc",
+    tab2 = "Info",
+  },
+}

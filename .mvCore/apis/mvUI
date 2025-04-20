@@ -1,0 +1,284 @@
+--Call this function to reset display. Text and Background colours can be defined, default is black background with white text
+function displayReset(fcolour, bcolour)
+    if fcolour then
+        term.setTextColour(fcolour)
+    else
+        term.setTextColour(colours.white)
+    end
+
+    if bcolour then
+        term.setBackgroundColour(bcolour)
+    else
+        term.setBackgroundColour(colours.black)
+    end
+
+    term.setCursorPos(1, 1)
+    term.clear()
+    return true
+end
+
+--Basic UI Functions
+function basicUI(config,drawBG,hideclose)
+    local loadSettings = fs.open(".system/users/.user1/settings", "r")
+    local settingsData = loadSettings.readAll()
+    loadSettings.close()
+ 
+    local settingsTable = textutils.unserialise(settingsData)
+    
+    local loadConfig = fs.open(config, "r")
+    local configData = loadConfig.readAll()
+    loadConfig.close()
+ 
+    local configTable = textutils.unserialise(configData)
+ 
+    if settingsTable.isDarkMode == false then
+       if drawBG == false then
+          --Do Nothing
+       else
+          paintutils.drawFilledBox(1, 1, 51, 19, colours.white)
+       end
+       if not hideclose == true then
+         mvText.dPrint("x", nil, nil, 50, 1, colours.black, colours.white)
+       end
+       mvText.dPrint(configTable.appData.appName, nil, nil, 2, 1, mvExtras.convertColour(configTable.uiData.appNameColour), 1)
+    elseif settingsTable.isDarkMode == true then
+       if drawBG == false then
+          --Do Nothing
+       else
+          paintutils.drawFilledBox(1, 1, 51, 19, colours.black)
+       end
+       if not hideclose == true then
+         mvText.dPrint("x", nil, nil, 50, 1, colours.lightGrey, colours.black)
+       end
+       mvText.dPrint(configTable.appData.appName, nil, nil, 2, 1, mvExtras.convertColour(configTable.uiData.appNameColourDark), colours.black)
+    else
+       mvUI.apiError("MVSOFTWARE_MVCORE", "SETTINGS_DARKMODE_INVALIDSTATE")
+    end
+ end
+ 
+ --Tabbed UI Functions
+ function tabbedUI(config, tabhighlight, hideclose)
+    local loadSettings = fs.open(".system/users/.user1/settings", "r")
+    local settingsData = loadSettings.readAll()
+    loadSettings.close()
+ 
+    local settingsTable = textutils.unserialise(settingsData)
+    
+    local loadConfig = fs.open(config, "r")
+    local configData = loadConfig.readAll()
+    loadConfig.close()
+ 
+    local configTable = textutils.unserialise(configData)
+ 
+    if settingsTable.isDarkMode == false then
+       paintutils.drawFilledBox(16, 1, 51, 19, colours.white)
+       paintutils.drawFilledBox(1, 1, 15, 19, mvExtras.convertColour(configTable.uiData.sidebarColour))
+       if not hideclose == true then
+         mvText.dPrint("x", nil, nil, 50, 1, colours.black, colours.white)
+       end
+       mvText.dPrint(configTable.appData.appName, nil, nil, 2, 1, mvExtras.convertColour(configTable.uiData.appNameColour), mvExtras.convertColour(configTable.uiData.sidebarColour))
+       if configTable.tabData.tab1 then mvText.dPrint(configTable.tabData.tab1, nil, nil, 2, 4, mvExtras.convertColour(configTable.uiData.sidebarTextColour), mvExtras.convertColour(configTable.uiData.sidebarColour)) end
+       if configTable.tabData.tab2 then mvText.dPrint(configTable.tabData.tab2, nil, nil, 2, 7, mvExtras.convertColour(configTable.uiData.sidebarTextColour), mvExtras.convertColour(configTable.uiData.sidebarColour)) end
+       if configTable.tabData.tab3 then mvText.dPrint(configTable.tabData.tab3, nil, nil, 2, 10, mvExtras.convertColour(configTable.uiData.sidebarTextColour), mvExtras.convertColour(configTable.uiData.sidebarColour)) end
+       if configTable.tabData.tab4 then mvText.dPrint(configTable.tabData.tab4, nil, nil, 2, 13, mvExtras.convertColour(configTable.uiData.sidebarTextColour), mvExtras.convertColour(configTable.uiData.sidebarColour)) end
+       if configTable.tabData.tab5 then mvText.dPrint(configTable.tabData.tab5, nil, nil, 2, 16, mvExtras.convertColour(configTable.uiData.sidebarTextColour), mvExtras.convertColour(configTable.uiData.sidebarColour)) end
+    elseif settingsTable.isDarkMode == true then
+       paintutils.drawFilledBox(16, 1, 51, 19, colours.black)
+       paintutils.drawFilledBox(1, 1, 15, 19, mvExtras.convertColour(configTable.uiData.sidebarColourDark))
+       if not hideclose == true then
+         mvText.dPrint("x", nil, nil, 50, 1, colours.lightGrey, colours.black)
+       end
+       mvText.dPrint(configTable.appData.appName, nil, nil, 2, 1, mvExtras.convertColour(configTable.uiData.appNameColourDark), mvExtras.convertColour(configTable.uiData.sidebarColourDark))
+       if configTable.tabData.tab1 then mvText.dPrint(configTable.tabData.tab1, nil, nil, 2, 4, mvExtras.convertColour(configTable.uiData.sidebarTextColourDark), mvExtras.convertColour(configTable.uiData.sidebarColourDark)) end
+       if configTable.tabData.tab2 then mvText.dPrint(configTable.tabData.tab2, nil, nil, 2, 7, mvExtras.convertColour(configTable.uiData.sidebarTextColourDark), mvExtras.convertColour(configTable.uiData.sidebarColourDark)) end
+       if configTable.tabData.tab3 then mvText.dPrint(configTable.tabData.tab3, nil, nil, 2, 10, mvExtras.convertColour(configTable.uiData.sidebarTextColourDark), mvExtras.convertColour(configTable.uiData.sidebarColourDark)) end
+       if configTable.tabData.tab4 then mvText.dPrint(configTable.tabData.tab4, nil, nil, 2, 13, mvExtras.convertColour(configTable.uiData.sidebarTextColourDark), mvExtras.convertColour(configTable.uiData.sidebarColourDark)) end
+       if configTable.tabData.tab5 then mvText.dPrint(configTable.tabData.tab5, nil, nil, 2, 16, mvExtras.convertColour(configTable.uiData.sidebarTextColourDark), mvExtras.convertColour(configTable.uiData.sidebarColourDark)) end
+    else
+       mvUI.apiError("MVSOFTWARE_MVCORE", "SETTINGS_DARKMODE_INVALIDSTATE")
+    end
+ 
+    --Handle Highlighting Tabs
+    if tabhighlight == 1 then
+       if settingsTable.isDarkMode == false then mvText.dPrint(configTable.tabData.tab1, nil, nil, 2, 4, mvExtras.convertColour(configTable.uiData.sidebarTextColourHighlight), mvExtras.convertColour(configTable.uiData.sidebarColour))
+       elseif settingsTable.isDarkMode == true then mvText.dPrint(configTable.tabData.tab1, nil, nil, 2, 4, mvExtras.convertColour(configTable.uiData.sidebarTextColourDarkHighlight), mvExtras.convertColour(configTable.uiData.sidebarColourDark))
+       else mvUI.apiError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+    elseif tabhighlight == 2 then
+       if settingsTable.isDarkMode == false then mvText.dPrint(configTable.tabData.tab2, nil, nil, 2, 7, mvExtras.convertColour(configTable.uiData.sidebarTextColourHighlight), mvExtras.convertColour(configTable.uiData.sidebarColour))
+       elseif settingsTable.isDarkMode == true then mvText.dPrint(configTable.tabData.tab2, nil, nil, 2, 7, mvExtras.convertColour(configTable.uiData.sidebarTextColourDarkHighlight), mvExtras.convertColour(configTable.uiData.sidebarColourDark))
+       else mvUI.apiError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+    elseif tabhighlight == 3 then
+       if settingsTable.isDarkMode == false then mvText.dPrint(configTable.tabData.tab3, nil, nil, 2, 10, mvExtras.convertColour(configTable.uiData.sidebarTextColourHighlight), mvExtras.convertColour(configTable.uiData.sidebarColour))
+       elseif settingsTable.isDarkMode == true then mvText.dPrint(configTable.tabData.tab3, nil, nil, 2, 10, mvExtras.convertColour(configTable.uiData.sidebarTextColourDarkHighlight), mvExtras.convertColour(configTable.uiData.sidebarColourDark))
+       else mvUI.apiError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+    elseif tabhighlight == 4 then
+       if settingsTable.isDarkMode == false then mvText.dPrint(configTable.tabData.tab4, nil, nil, 2, 13, mvExtras.convertColour(configTable.uiData.sidebarTextColourHighlight), mvExtras.convertColour(configTable.uiData.sidebarColour))
+       elseif settingsTable.isDarkMode == true then mvText.dPrint(configTable.tabData.tab4, nil, nil, 2, 13, mvExtras.convertColour(configTable.uiData.sidebarTextColourDarkHighlight), mvExtras.convertColour(configTable.uiData.sidebarColourDark))
+       else mvUI.apiError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+    elseif tabhighlight == 5 then
+       if settingsTable.isDarkMode == false then mvText.dPrint(configTable.tabData.tab5, nil, nil, 2, 16, mvExtras.convertColour(configTable.uiData.sidebarTextColourHighlight), mvExtras.convertColour(configTable.uiData.sidebarColour))
+       elseif settingsTable.isDarkMode == true then mvText.dPrint(configTable.tabData.tab5, nil, nil, 2, 16, mvExtras.convertColour(configTable.uiData.sidebarTextColourDarkHighlight), mvExtras.convertColour(configTable.uiData.sidebarColourDark))
+       else mvUI.apiError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE") end
+    else
+       mvUI.apiError("MVSOFTWARE_MVCORE", "TABBEDUI_DARKMODE_UNKNOWNSTATE")
+    end
+ end
+ 
+--Desktop notification interface
+function notify(title, details, notitype)
+
+	local loadSettings = fs.open(".system/users/.user1/settings", "r")
+	local settingsData = loadSettings.readAll()
+	loadSettings.close()
+	local settingsTable = textutils.unserialise(settingsData)
+	local loadSystem = fs.open(".system/desktop/.config", "r")
+	local systemData = loadSystem.readAll()
+	loadSystem.close()
+	systemTable = textutils.unserialise(systemData)
+	
+	if settingsTable.isDarkMode == true then
+		if settingsTable.isAnimated == true then
+			paintutils.drawFilledBox(46, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+			paintutils.drawFilledBox(38, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+			paintutils.drawFilledBox(32, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+			paintutils.drawFilledBox(27, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+			paintutils.drawFilledBox(22, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+			sleep()
+		end
+		paintutils.drawFilledBox(22, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		mvText.dPrint("x", nil, nil, 50, 14, 1, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		if title == nil then
+			title = "No title"
+		end
+		if details == nil then
+			details = "No details"
+		end
+		mvText.dPrint(string.sub(title,1,23), nil, nil, 27, 15, mvExtras.convertColour(systemTable.desktopToggleHighlightOnDark), mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+		mvText.dPrint(string.sub(details,1,23), nil, nil, 27, 16, 1, mvExtras.convertColour(systemTable.desktopSubMenuColourDark))
+	else
+		if settingsTable.isAnimated == true then
+			paintutils.drawFilledBox(46, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+			paintutils.drawFilledBox(38, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+			paintutils.drawFilledBox(32, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+			paintutils.drawFilledBox(27, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+			paintutils.drawFilledBox(22, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+			sleep()
+		end
+		paintutils.drawFilledBox(22, 14, 50, 17, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		mvText.dPrint("x", nil, nil, 49, 14, colours.black, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		if title == nil then
+			title = "No title"
+		end
+		if details == nil then
+			details = "No details"
+		end
+		if notitype == nil then
+			notitype = "nil"
+		end
+		mvText.dPrint(string.sub(title,1,27), nil, nil, 23, 15, mvExtras.convertColour(systemTable.desktopToggleHighlightOnLight), mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+		mvText.dPrint(string.sub(details,1,27), nil, nil, 23, 16, colours.black, mvExtras.convertColour(systemTable.desktopSubMenuColourLight))
+	end
+	
+	--Note down last notification
+	if fs.exists(".system/desktop/.config") then
+		local loadNotify = fs.open(".system/desktop/.config", "r")
+		local notifyData = loadNotify.readAll()
+		loadNotify.close()
+		notifyTable = textutils.unserialise(notifyData)
+		
+		notifyTable.notify1.title = title
+		notifyTable.notify1.details = details
+		notifyTable.notify1.type = notitype
+		
+		local notifyOpen = fs.open(".system/desktop/.config", "w")
+		local notifyWrite = notifyOpen.write(textutils.serialise(notifyTable))
+		notifyOpen.close()
+	end
+end
+ 
+--mvCore API Error
+function apiError(sc)
+	if pocket then
+		paintutils.drawFilledBox(1, 6, 51, 13, 1)
+		mvText.dPrint("A system error has occured.", nil, nil, 2, 7, colours.black, 1)
+		if sc then
+			mvText.dPrint(sc, nil, nil, 2, 9, colours.black, 1)
+		else
+			mvText.dPrint("Unknown system code", nil, nil, 2, 9, colours.black, 1)
+		end
+		local runningProgram = shell.getRunningProgram()
+		mvText.dPrint(runningProgram, nil, nil, 2, 10, colours.black, 1)
+		mvText.dPrint("Hit key to reboot.", nil, nil, 2, 12, colours.black, 1)
+	else
+		paintutils.drawFilledBox(3, 5, 48, 14, colours.black)
+		paintutils.drawFilledBox(4, 6, 47, 13, 1)
+		mvText.dPrint("A system error has occured.", nil, nil, 5, 7, colours.black, 1)
+		if sc then
+			mvText.dPrint(sc, nil, nil, 5, 9, colours.black, 1)
+		else
+			mvText.dPrint("Unknown system code", nil, nil, 5, 9, colours.black, 1)
+		end
+		local runningProgram = shell.getRunningProgram()
+		mvText.dPrint(runningProgram, nil, nil, 5, 10, colours.black, 1)
+		mvText.dPrint("Hit key to reboot.", nil, nil, 5, 12, colours.black, 1)
+	end
+	while true do
+	event, key, X, Y = os.pullEvent()
+	if event == "key" then
+		os.reboot()
+		break
+	end
+	end
+end
+
+function fileError(fd, et)
+	if pocket then
+		paintutils.drawFilledBox(1, 6, 51, 13, 1)
+		mvText.dPrint("A file error has occured.", nil, nil, 2, 7, colours.black, 1)
+		if et == "missing" or et == "m" then
+			mvText.dPrint("File could not be found", nil, nil, 2, 9, colours.black, 1)
+		elseif et == "corrupt" or et == "c" then
+			mvText.dPrint("File integrity check failed", nil, nil, 2, 9, colours.black, 1)
+		else
+			mvText.dPrint("File error unknown", nil, nil, 2, 9, colours.black, 1)
+		end
+		if fd then
+			mvText.dPrint(fd, nil, nil, 2, 10, colours.black, 1)
+		else
+			mvText.dPrint("Unknown file or directory", nil, nil, 2, 10, colours.black, 1)
+		end
+		mvText.dPrint("Hit any key to reboot.", nil, nil, 2, 12, colours.black, 1)
+	else
+		paintutils.drawFilledBox(3, 5, 48, 14, colours.black)
+		paintutils.drawFilledBox(4, 6, 47, 13, 1)
+		mvText.dPrint("A file error has occured.", nil, nil, 5, 7, colours.black, 1)
+		if et == "missing" or et == "m" then
+			mvText.dPrint("File could not be found", nil, nil, 5, 9, colours.black, 1)
+		elseif et == "corrupt" or et == "c" then
+			mvText.dPrint("File integrity check failed", nil, nil, 5, 9, colours.black, 1)
+		else
+			mvText.dPrint("File error unknown", nil, nil, 5, 9, colours.black, 1)
+		end
+		if fd then
+			mvText.dPrint(fd, nil, nil, 5, 10, colours.black, 1)
+		else
+			mvText.dPrint("Unknown file or directory", nil, nil, 5, 10, colours.black, 1)
+		end
+		mvText.dPrint("Hit any key to reboot.", nil, nil, 5, 12, colours.black, 1)
+	end
+	while true do
+	event, key, X, Y = os.pullEvent()
+	if event == "key" then
+		os.reboot()
+		break
+	end
+	end
+end

@@ -1,0 +1,110 @@
+--mvLoader 2021
+
+--Load variables and preferences
+shell.setAlias("cls","clear")
+shell.setAlias("del","delete")
+local loadUserInfo = fs.open(".system/users/.user1/.config", "r")
+local userData = loadUserInfo.readAll()
+loadUserInfo.close()
+systemUser = textutils.unserialise(userData)
+local loadSettings = fs.open(".system/users/.user1/settings", "r")
+local settingsData = loadSettings.readAll()
+loadSettings.close()
+settingsTable = textutils.unserialise(settingsData)
+local loadSystem = fs.open(".system/desktop/.config", "r")
+local systemData = loadSystem.readAll()
+loadSystem.close()
+systemTable = textutils.unserialise(systemData)
+
+--Clear temp files from mvOS
+if fs.exists(".temp") then
+	fs.delete(".temp")
+end
+
+--Sort username out
+if string.len(systemUser.username) > 30 then
+	userDisplayName = string.sub(systemUser.username, 1, 27).."..."
+else
+	userDisplayName = string.sub(systemUser.username, 1, 30)
+end
+
+--Background wallpaper
+if settingsTable.isDarkMode == true then
+	paintutils.drawFilledBox(1, 1, 51, 19, 128)
+	sleep()
+	if fs.exists(settingsTable.bgImage.."_dm") then
+		paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage.."_dm"), 1, 1)
+	elseif fs.exists(settingsTable.bgImage) then
+		paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+	else
+		term.setBackgroundColour(colours.lightBlue)
+		term.clear()
+	end
+	paintutils.drawFilledBox(6, 14, 46, 18, colours.black)
+	if systemTable.isFirstBoot == true then
+		mvText.dPrint("Welcome to mvOS!", nil, nil, 7, 15, 1, colours.black)
+		mvText.dPrint("Preparing your account...", nil, nil, 7, 17, 1, colours.black)
+	else
+		mvText.dPrint("Welcome, "..userDisplayName, nil, nil, 7, 15, 1, colours.black)
+		mvText.dPrint("One moment...", nil, nil, 7, 17, 1, colours.black)
+	end
+else
+	paintutils.drawFilledBox(1, 1, 51, 19, 128)
+	sleep()
+	paintutils.drawFilledBox(1, 1, 51, 19, 256)
+	sleep()
+	paintutils.drawFilledBox(1, 1, 51, 19, colours.lightBlue)
+	sleep(0.3)
+	if fs.exists(settingsTable.bgImage) then
+		paintutils.drawImage(paintutils.loadImage(settingsTable.bgImage), 1, 1)
+	else
+		term.setBackgroundColour(colours.lightBlue)
+		term.clear()
+	end
+	paintutils.drawFilledBox(6, 14, 46, 18, 1)
+	if systemTable.isFirstBoot == true then
+		mvText.dPrint("Welcome to mvOS!", nil, nil, 7, 15, colours.black, 1)
+		mvText.dPrint("Preparing your account...", nil, nil, 7, 17, colours.black, 1)
+	else
+		mvText.dPrint("Welcome, "..userDisplayName, nil, nil, 7, 15, colours.black, 1)
+		mvText.dPrint("One moment...", nil, nil, 7, 17, colours.black, 1)
+	end
+end
+
+--Hash check the desktop file itself
+if fs.exists(".system/desktop/desktop") then
+	if not mvSecurity.validateHash(".system/desktop/desktop", "311e91bad16611280557b9d939f8719d31851c82c642282ac0e4a3481132dc84") then
+		--mvUI.fileError(".system/desktop/desktop","corrupt")
+	end
+else
+	mvUI.fileError(".system/desktop/desktop","missing")
+end
+	
+--Hash check LockUI
+if fs.exists(".system/desktop/lock") then
+	if not mvSecurity.validateHash(".system/desktop/lock", "c1874bcaa7f38ce1238318f383f43f5ae231849eb7d3c655e441d3457071c70c") then
+		--mvUI.fileError(".system/desktop/lock","corrupt")
+	end
+else
+	mvUI.fileError(".system/desktop/lock","missing")
+end
+
+--Run first-boot stuff
+if systemTable.isFirstBoot == true then
+	if systemTable.isAccountReady == false then
+		shell.run(".system/desktop/oobe/setup_account/account")
+	end
+	shell.run(".system/desktop/oobe/promo_netsuite/netsuite")
+end
+
+--Check for Lock file
+if settingsTable.isLocked then
+	if fs.exists(".system/desktop/lock") then
+		shell.run(".system/desktop/lock")
+	else
+		mvUI.fileError(".system/desktop/Lock","m")
+	end
+end
+
+--Run desktop
+shell.run(".system/desktop/desktop")

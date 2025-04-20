@@ -1,0 +1,160 @@
+--Disable Terminate
+oldPullEvent = os.pullEvent
+os.pullEvent = os.pullEventRaw
+
+--Load boot config
+local loadBoot = fs.open(".preboot/cfg/.config", "r")
+local bootInfo = loadBoot.readAll()
+loadBoot.close()
+bootcfg = textutils.unserialise(bootInfo)
+
+--Load mvCore
+os.loadAPI(".preboot/apis/mvExtras")
+os.loadAPI(".preboot/apis/mvNetwork")
+os.loadAPI(".preboot/apis/mvPeripheral")
+os.loadAPI(".preboot/apis/mvSecurity")
+os.loadAPI(".preboot/apis/mvText")
+os.loadAPI(".preboot/apis/mvUI")
+
+--ProShell validation
+function validateShell()
+	if not mvSecurity.validateHash(".preboot/Shell","556bbdf77c5fd401e7253a07a93fc2d3c6b05dece78eea72b768ad25a9a46f6b") then
+		mvUI.fileError(".preboot/Shell","corrupt")
+	end
+end
+
+--mvSetup validation
+function validateSetup()
+	if not mvSecurity.validateHash(".preboot/mvSetup","35ece2492bf29129e368bbba3767db637f28a9f7b9ef5097ea4de189f2e53f1c") then
+		mvUI.fileError(".preboot/mvSetup","corrupt")
+	end
+end
+
+--Splash Screen
+function showSplash(showText)
+	mvUI.displayReset()
+	if term.isColour() then
+		if not pocket then
+			if fs.exists(".preboot/img/colsyslogo") then
+				if mvSecurity.validateHash(".preboot/img/colsyslogo", "df23fdce08a7b8bd900bdb9a7d73a4df25c5a8c64a9993b1a2e479c6f8d75831") then
+					paintutils.drawImage(paintutils.loadImage(".preboot/img/colsyslogo"), 1, 1)
+					sleep()
+				else
+					mvText.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+				end
+			else
+				mvText.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+			end
+		else
+			mvText.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+		end
+	else
+		if fs.exists(".preboot/img/bassyslogo") then
+			if mvSecurity.validateHash(".preboot/img/bassyslogo", "350aefb241a721184c403c12353bfee2fdc7df9d63eaca7a5b311a9d0c305d0d") then
+				paintutils.drawImage(paintutils.loadImage(".preboot/img/bassyslogo"), 1, 1)
+				sleep()
+			else
+				mvText.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+			end
+		else
+			mvText.dPrint("Starting mvCore", "c", nil, 1, 10, 1, colours.black)
+		end
+	end
+	if showText == true then
+		if not pocket then
+			mvText.dPrint("Hit [DEL] for Boot Menu", "c", nil, 1, 18, 128)
+		end
+	end
+end
+showSplash(true)
+
+--mvCore Boot Manager, where do you want to go today?
+local function bootManager()
+	mvUI.displayReset()
+	if pocket then
+		mvText.dPrint("mvCore Boot Manager", nil, nil, 2, 2, 1)
+		mvText.dPrint("[1] - Continue normally", nil, nil, 2, 5, 1)
+		mvText.dPrint("[2] - Start ProShell", nil, nil, 2, 6, 1)
+		mvText.dPrint("[END] - shut down", nil, nil, 2, 18, 1)
+		mvText.dPrint(tostring(mvExtras.copyright()), nil, nil, 2, 19, 128)
+	else
+		mvText.dPrint("mvCore Boot Manager", nil, nil, 2, 2, 1)
+		mvText.dPrint("[1] - Continue normally", nil, nil, 2, 5, 1)
+		mvText.dPrint("[2] - Start mvCore ProShell", nil, nil, 2, 6, 1)
+		if term.isColour() then
+			mvText.dPrint("[3] - Start mvCore Setup", nil, nil, 2, 7, 1)
+		end
+		mvText.dPrint("Hit [END] to shut down", nil, nil, 2, 18, 1)
+		mvText.dPrint(tostring(mvExtras.copyright()), nil, nil, 2, 19, 128)
+	end
+	while true do
+	local event, param = os.pullEvent()
+		if event == "key" then
+			if param == mvExtras.keyMapper("1") then
+				if bootcfg.autoStartExtOS == true then
+					if fs.exists(bootcfg.extOSBootDir) then
+						shell.run(bootcfg.extOSBootDir)
+					else
+						mvUI.displayReset()
+					end
+				end
+				shell.run(".preboot/shell")
+				os.shutdown()
+				break
+			elseif param == mvExtras.keyMapper("2") then
+				if pocket then
+					mvText.dPrint("[2] - Loading ProShell...", nil, nil, 2, 6, colours.lightGrey)
+				else
+					mvText.dPrint("[2] - Loading mvCore ProShell...", nil, nil, 2, 6, colours.lightGrey)
+				end
+				validateShell()
+				mvUI.displayReset()
+				sleep()
+				shell.run(".preboot/shell")
+				os.shutdown()
+				break
+			elseif param == mvExtras.keyMapper("3") then
+				if term.isColour() then
+					if not pocket then
+						mvText.dPrint("[3] - Loading mvCore Setup...", nil, nil, 2, 7, colours.lightGrey)
+						validateSetup()
+						shell.run(".preboot/mvSetup")
+						os.shutdown()
+						break
+					end
+				end
+			elseif param == mvExtras.keyMapper("End") then
+				os.shutdown()
+				break
+			else
+				--Don't do anything if any other key is hit
+			end
+		end
+	end
+end
+
+--Where everything real starts
+os.startTimer(1)
+while true do
+    local event, param = os.pullEvent()    
+    if event == "timer" then
+		showSplash(false)
+		validateShell()
+		validateSetup()
+		if bootcfg.autoStartExtOS == true then
+			if fs.exists(bootcfg.extOSBootDir) then
+				shell.run(bootcfg.extOSBootDir)
+			else
+				mvUI.displayReset()
+			end
+		end
+		shell.run(".preboot/shell")
+		os.shutdown()
+		break
+    elseif event == "key" then
+        if param == mvExtras.keyMapper("Delete") then
+            bootManager()
+			break
+		end
+    end
+end

@@ -1,0 +1,13 @@
+{
+  appData = {
+    appName = "Set your name and password",
+    appVersion = "0.1",
+    appBuild = "20210417",
+    appDeveloper = "mvSoftware",
+  },
+
+  uiData = {
+	appNameColour = "colours.blue",
+	appNameColourDark = "colours.lightBlue",
+  },
+}

@@ -1,0 +1,947 @@
+--Launch handling
+local tArgs = {...}
+
+--Load System Information
+local loadConfig = fs.open(".system/sysinfo", "r")
+local configData = loadConfig.readAll()
+loadConfig.close()
+systemInfo = textutils.unserialise(configData)
+
+--Load Desktop Settings
+local function loadDesktopSettings()
+	local loadSettings = fs.open(".system/users/.user1/settings", "r")
+	local settingsData = loadSettings.readAll()
+	loadSettings.close()
+	settingsTable = textutils.unserialise(settingsData)
+end
+
+--Save Desktop Settings
+local function saveDesktopSettings()
+	local settingsOpen = fs.open(".system/users/.user1/settings", "w")
+	local settingsWrite = settingsOpen.write(textutils.serialise(settingsTable))
+	settingsOpen.close()
+end
+
+--Load Personal Settings
+local function loadPersonalSettings()
+	local loadPersonal = fs.open(".system/users/.user1/.config", "r")
+	local personalData = loadPersonal.readAll()
+	loadPersonal.close()
+	personalTable = textutils.unserialise(personalData)
+end
+
+--Save Personal Settings
+local function savePersonalSettings()
+	local personalOpen = fs.open(".system/users/.user1/.config", "w")
+	local personalWrite = personalOpen.write(textutils.serialise(personalTable))
+	personalOpen.close()
+end
+
+--Get size of paths for storage 
+local function getSize(path)
+  local size = 0
+  for _, file in ipairs(fs.list(path)) do
+    if fs.isDir(fs.combine(path, file)) then
+      size = size + getSize(fs.combine(path, file))
+    else
+      size = size + fs.getSize(fs.combine(path, file))
+    end
+  end
+  return size
+end
+
+--About Tab UI
+function AboutUI()
+	hasDrawnDisk = false
+	
+	appSize = getSize(".system/applications")
+	docSize = getSize(".system/documents")
+	mvOSSize = getSize(".system")
+	mvCoreSize = getSize(".preboot")
+	startupSize = fs.getSize("startup")
+	freeSize = fs.getFreeSpace("/")
+	if fs.exists(".devtools") then
+		devtoolsSize = getSize(".devtools")
+		mvCoreSize = mvCoreSize+startupSize+devtoolsSize
+		totalSize = mvOSSize+mvCoreSize+freeSize
+	else
+		mvCoreSize = mvCoreSize+startupSize
+		totalSize = mvOSSize+mvCoreSize+freeSize
+	end
+	usedSize = mvCoreSize+mvOSSize
+	computerName = os.getComputerLabel()
+	if computerName == nil then
+		computerName = "Unnamed"
+	end
+	if settingsTable.isDarkMode == true then
+		mvUI.tabbedUI(".system/applications/system/settings/config",1)
+		mvText.dPrint("About mvOS "..systemInfo.codename, nil, nil, 18, 1, 1, colours.black)
+		mvText.dPrint("Name", nil, nil, 18, 4, 2048, colours.black)
+		mvText.dPrint("Storage", nil, nil, 35, 4, 2048, colours.black)
+		mvText.dPrint("Version", nil, nil, 18, 7, 2048, colours.black)
+		mvText.dPrint("Release", nil, nil, 35, 7, 2048, colours.black)
+		mvText.dPrint(string.sub(computerName,1,16), nil, nil, 18, 5, 1, colours.black)
+		if freeSize >= 1000 * 1000 then
+			mvText.dPrint(math.ceil((math.ceil( freeSize / ( 100 * 1000 ) ) / 10)).."MB left", nil, nil, 35, 5, 1, colours.black)
+		elseif freeSize >= 1000 then
+			mvText.dPrint(math.ceil((math.ceil( freeSize / 100 ) / 10)).."KB left", nil, nil, 35, 5, 1, colours.black)
+		else
+			mvText.dPrint(math.ceil(freeSize).."B left", nil, nil, 35, 5, 1, colours.black)
+		end
+		mvText.dPrint(systemInfo.version, nil, nil, 18, 8, 1, colours.black)
+		mvText.dPrint(systemInfo.release, nil, nil, 35, 8, 1, colours.black)
+		mvText.dPrint("Click a quarter for more info", nil, nil, 18, 11, 256, colours.black)
+	else
+		mvUI.tabbedUI(".system/applications/system/settings/config",1)
+		mvText.dPrint("About mvOS "..systemInfo.codename, nil, nil, 18, 1, colours.black, 1)
+		mvText.dPrint("Name", nil, nil, 18, 4, 2048, 1)
+		mvText.dPrint("Storage", nil, nil, 35, 4, 2048, 1)
+		mvText.dPrint("Version", nil, nil, 18, 7, 2048, 1)
+		mvText.dPrint("Release", nil, nil, 35, 7, 2048, 1)
+		mvText.dPrint(string.sub(computerName,1,16), nil, nil, 18, 5, colours.black, 1)
+		if freeSize >= 1000 * 1000 then
+			mvText.dPrint(math.ceil((math.ceil( freeSize / ( 100 * 1000 ) ) / 10)).."MB left", nil, nil, 35, 5, colours.black, 1)
+		elseif freeSize >= 1000 then
+			mvText.dPrint(math.ceil((math.ceil( freeSize / 100 ) / 10)).."KB left", nil, nil, 35, 5, colours.black, 1)
+		else
+			mvText.dPrint(math.ceil(freeSize).."B left", nil, nil, 35, 5, colours.black, 1)
+		end
+		mvText.dPrint(systemInfo.version, nil, nil, 18, 8, colours.black, 1)
+		mvText.dPrint(systemInfo.release, nil, nil, 35, 8, colours.black, 1)
+		mvText.dPrint("Click a quarter for more info", nil, nil, 18, 11, 128, 1)
+	end
+	AboutClick()
+end
+
+--System Tab UI
+function SystemUI()
+	loadDesktopSettings()
+	if settingsTable.isDarkMode == true then
+		mvUI.tabbedUI(".system/applications/system/settings/config",2)
+		mvText.dPrint("Main system settings", nil, nil, 18, 1, 1, colours.black)
+		mvText.dPrint("Desktop notifications", nil, nil, 18, 4, 2048, colours.black)
+		mvText.dPrint("Announces any events or changes", nil, nil, 18, 5, 1, colours.black)
+		mvText.dPrint("Password login", nil, nil, 18, 7, 2048, colours.black)
+		mvText.dPrint("Require password on startup", nil, nil, 18, 8, 1, colours.black)
+		mvText.dPrint("Use 24-hour format", nil, nil, 18, 10, 2048, colours.black)
+		mvText.dPrint("Desktop clock time format", nil, nil, 18, 11, 1, colours.black)
+	else
+		mvUI.tabbedUI(".system/applications/system/settings/config",2)
+		mvText.dPrint("Main system settings", nil, nil, 18, 1, colours.black, 1)
+		mvText.dPrint("Desktop notifications", nil, nil, 18, 4, 2048, 1)
+		mvText.dPrint("Announces any events or changes", nil, nil, 18, 5, colours.black, 1)
+		mvText.dPrint("Password login", nil, nil, 18, 7, 2048, 1)
+		mvText.dPrint("Require password on startup", nil, nil, 18, 8, colours.black, 1)
+		mvText.dPrint("Use 24-hour format", nil, nil, 18, 10, 2048, 1)
+		mvText.dPrint("Desktop clock time format", nil, nil, 18, 11, colours.black, 1)
+	end
+	if settingsTable.doNotify == true then
+		paintutils.drawPixel(50, 4, colours.green)
+	else
+		paintutils.drawPixel(50, 4, 128)
+	end
+	if settingsTable.isLocked == true then
+		paintutils.drawPixel(50, 7, colours.green)
+	else
+		paintutils.drawPixel(50, 7, 128)
+	end
+	if settingsTable.is24Hour == true then
+		paintutils.drawPixel(50, 10, colours.green)
+	else
+		paintutils.drawPixel(50, 10, 128)
+	end
+	SystemClick()
+end
+
+--Wallpaper Tab UI
+function WallpaperUI()
+	if settingsTable.isDarkMode == true then
+		mvUI.tabbedUI(".system/applications/system/settings/config",3)
+		mvText.dPrint("Desktop wallpaper settings", nil, nil, 18, 1, 1, colours.black)
+		mvText.dPrint("Forest sunrise", nil, nil, 18, 4, 2048, colours.black)
+		mvText.dPrint("mvFlow stripes", nil, nil, 18, 7, 2048, colours.black)
+		mvText.dPrint("Cobalt minimal", nil, nil, 18, 10, 2048, colours.black)
+		mvText.dPrint("Sentinel range", nil, nil, 18, 13, 2048, colours.black)
+		mvText.dPrint("Blue wave", nil, nil, 18, 16, 2048, colours.black)
+		mvText.dPrint("Golden sunrise in the forest", nil, nil, 18, 5, 1, colours.black)
+		mvText.dPrint("mvCore logo with stripes", nil, nil, 18, 8, 1, colours.black)
+		mvText.dPrint("AdvOS Cobalt default wallpaper", nil, nil, 18, 11, 1, colours.black)
+		mvText.dPrint("Mountain with trees and water", nil, nil, 18, 14, 1, colours.black)
+		mvText.dPrint("Simple, blue ocean wave", nil, nil, 18, 17, 1, colours.black)
+	else
+		mvUI.tabbedUI(".system/applications/system/settings/config",3)
+		mvText.dPrint("Desktop wallpaper settings", nil, nil, 18, 1, colours.black, 1)
+		mvText.dPrint("Forest sunrise", nil, nil, 18, 4, 2048, 1)
+		mvText.dPrint("mvFlow stripes", nil, nil, 18, 7, 2048, 1)
+		mvText.dPrint("Cobalt minimal", nil, nil, 18, 10, 2048, 1)
+		mvText.dPrint("Sentinel range", nil, nil, 18, 13, 2048, 1)
+		mvText.dPrint("Blue wave", nil, nil, 18, 16, 2048, 1)
+		mvText.dPrint("Golden sunrise in the forest", nil, nil, 18, 5, colours.black, 1)
+		mvText.dPrint("mvCore logo with stripes", nil, nil, 18, 8, colours.black, 1)
+		mvText.dPrint("AdvOS Cobalt default wallpaper", nil, nil, 18, 11, colours.black, 1)
+		mvText.dPrint("Mountain with trees and water", nil, nil, 18, 14, colours.black, 1)
+		mvText.dPrint("Simple, blue ocean wave", nil, nil, 18, 17, colours.black, 1)
+	end
+	if settingsTable.bgImage == ".system/desktop/bg/Forest" then
+		paintutils.drawPixel(50, 4, colours.green)
+	else
+		paintutils.drawPixel(50, 4, 128)
+	end
+	if settingsTable.bgImage == ".system/desktop/bg/mvFlow" then
+		paintutils.drawPixel(50, 7, colours.green)
+	else
+		paintutils.drawPixel(50, 7, 128)
+	end
+	if settingsTable.bgImage == ".system/desktop/bg/Cobalt" then
+		
+		paintutils.drawPixel(50, 10, colours.green)
+	else
+		paintutils.drawPixel(50, 10, 128)
+	end
+	if settingsTable.bgImage == ".system/desktop/bg/Sentinel" then
+		
+		paintutils.drawPixel(50, 13, colours.green)
+	else
+		paintutils.drawPixel(50, 13, 128)
+	end
+	if settingsTable.bgImage == ".system/desktop/bg/Wave" then
+		
+		paintutils.drawPixel(50, 16, colours.green)
+	else
+		paintutils.drawPixel(50, 16, 128)
+	end
+	WallpaperClick()
+end
+
+--Personal Tab UI
+function PersonalUI()
+	loadPersonalSettings()
+	
+	--Sort username out
+	if string.len(personalTable.username) > 30 then
+		userDisplayName = string.sub(personalTable.username, 1, 27).."..."
+	else
+		userDisplayName = string.sub(personalTable.username, 1, 30)
+	end
+	
+	--Sort hint out
+	if string.len(personalTable.hint) > 30 then
+		userDisplayHint = string.sub(personalTable.hint, 1, 27).."..."
+	else
+		userDisplayHint = string.sub(personalTable.hint, 1, 30)
+	end
+	
+	if settingsTable.isDarkMode == true then
+		mvUI.tabbedUI(".system/applications/system/settings/config",4)
+		mvText.dPrint("Your personal settings", nil, nil, 18, 1, 1, colours.black)
+		mvText.dPrint(userDisplayName, nil, nil, 18, 4, 2048, colours.black)
+		mvText.dPrint("The name for this user account", nil, nil, 18, 5, 1, colours.black)
+		mvText.dPrint("Password", nil, nil, 18, 7, 2048, colours.black)
+		mvText.dPrint("Your password for logging in", nil, nil, 18, 8, 1, colours.black)
+		mvText.dPrint("Password hint", nil, nil, 18, 10, 2048, colours.black)
+		mvText.dPrint(userDisplayHint, nil, nil, 18, 11, 1, colours.black)
+	else
+		mvUI.tabbedUI(".system/applications/system/settings/config",4)
+		mvText.dPrint("Your personal settings", nil, nil, 18, 1, colours.black, 1)
+		mvText.dPrint(userDisplayName, nil, nil, 18, 4, 2048, 1)
+		mvText.dPrint("The name for this user account", nil, nil, 18, 5, colours.black, 1)
+		mvText.dPrint("Password", nil, nil, 18, 7, 2048, 1)
+		mvText.dPrint("Your password for logging in", nil, nil, 18, 8, colours.black, 1)
+		mvText.dPrint("Password hint", nil, nil, 18, 10, 2048, 1)
+		mvText.dPrint(userDisplayHint, nil, nil, 18, 11, colours.black, 1)
+	end
+	paintutils.drawPixel(50, 4, 128)
+	paintutils.drawPixel(50, 7, 128)
+	paintutils.drawPixel(50, 10, 128)
+	PersonalClick()
+end
+
+--Update Tab UI
+function UpdateUI()
+	loadPersonalSettings()
+	if settingsTable.isDarkMode == true then
+		mvUI.tabbedUI(".system/applications/system/settings/config",5)
+		mvText.dPrint("mvOS system updates", nil, nil, 18, 1, 1, colours.black)
+		if fs.exists("disk/.update") then
+			mvText.dPrint("On your computer", nil, nil, 18, 4, 2048, colours.black)
+			mvText.dPrint("mvOS "..systemInfo.version.." "..systemInfo.codename.." ("..systemInfo.build..")", nil, nil, 18, 5, 1, colours.black)
+			local loadUpdate = fs.open("disk/.update", "r")
+			local updateData = loadUpdate.readAll()
+			loadUpdate.close()
+			local mvOSUpdate = textutils.unserialise(updateData)
+			mvText.dPrint("On install disk", nil, nil, 18, 7, 2048, colours.black)
+			mvText.dPrint("mvOS "..mvOSUpdate.version.." "..mvOSUpdate.codename.." ("..mvOSUpdate.build..")", nil, nil, 18, 8, 1, colours.black)
+			sysver = tonumber(systemInfo.build)
+			diskver = tonumber(mvOSUpdate.build)
+			if sysver > diskver then
+				mvText.dPrint("The version of mvOS on the disk", nil, nil, 18, 10, colours.red, colours.black)
+				mvText.dPrint("is older than the version you", nil, nil, 18, 11, colours.red, colours.black)
+				mvText.dPrint("currently have installed.", nil, nil, 18, 12, colours.red, colours.black)
+				local doUpdate = false
+			elseif sysver == diskver then
+				mvText.dPrint("Your computer is already running", nil, nil, 18, 10, 1, colours.black)
+				mvText.dPrint("this version of mvOS.", nil, nil, 18, 11, 1, colours.black)
+				local doUpdate = false
+			elseif sysver < diskver then
+				mvText.dPrint("There is a new version of mvOS", nil, nil, 18, 10, colours.green, colours.black)
+				mvText.dPrint("available. Click here to install.", nil, nil, 18, 11, colours.green, colours.black)
+				local doUpdate = true
+			else
+				mvText.dPrint("Failed to handle build strings", nil, nil, 18, 10, 1, colours.black)
+				local doUpdate = false
+			end
+		else
+			mvText.dPrint("Please insert a disk containing", nil, nil, 18, 4, 256, colours.black)
+			mvText.dPrint("a newer version of mvOS.", nil, nil, 18, 5, 256, colours.black)
+		end
+	else
+		mvUI.tabbedUI(".system/applications/system/settings/config",5)
+		mvText.dPrint("mvOS system updates", nil, nil, 18, 1, colours.black, 1)
+		if fs.exists("disk/.update") then
+			mvText.dPrint("On your computer", nil, nil, 18, 4, 2048, 1)
+			mvText.dPrint("mvOS "..systemInfo.version.." "..systemInfo.codename.." ("..systemInfo.build..")", nil, nil, 18, 5, colours.black, 1)
+			local loadUpdate = fs.open("disk/.update", "r")
+			local updateData = loadUpdate.readAll()
+			loadUpdate.close()
+			local mvOSUpdate = textutils.unserialise(updateData)
+			mvText.dPrint("On install disk", nil, nil, 18, 7, 2048, 1)
+			mvText.dPrint("mvOS "..mvOSUpdate.version.." "..mvOSUpdate.codename.." ("..mvOSUpdate.build..")", nil, nil, 18, 8, colours.black, 1)
+			sysver = tonumber(systemInfo.build)
+			diskver = tonumber(mvOSUpdate.build)
+			if sysver > diskver then
+				mvText.dPrint("The version of mvOS on the disk", nil, nil, 18, 10, colours.red, 1)
+				mvText.dPrint("is older than the version you", nil, nil, 18, 11, colours.red, 1)
+				mvText.dPrint("currently have installed.", nil, nil, 18, 12, colours.red, 1)
+				doUpdate = false
+			elseif sysver == diskver then
+				mvText.dPrint("Your computer is already running", nil, nil, 18, 10, colours.black, 1)
+				mvText.dPrint("this version of mvOS.", nil, nil, 18, 11, colours.black, 1)
+				doUpdate = false
+			elseif sysver < diskver then
+				mvText.dPrint("There is a new version of mvOS", nil, nil, 18, 10, colours.green, 1)
+				mvText.dPrint("available. Click here to install.", nil, nil, 18, 11, colours.green, 1)
+				doUpdate = true
+			else
+				mvText.dPrint("Failed to handle build strings", nil, nil, 18, 10, colours.black, 1)
+				doUpdate = false
+			end
+		else
+			mvText.dPrint("Please insert a disk containing", nil, nil, 18, 4, 128, 1)
+			mvText.dPrint("a newer version of mvOS.", nil, nil, 18, 5, 128, 1)
+		end
+	end
+	UpdateClick()
+end
+
+function AboutClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 7 then
+			SystemUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 10 then
+			WallpaperUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 13 then
+			PersonalUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 16 then
+			UpdateUI()
+			break
+		end
+		if X >= 18 and X <= 33 and Y >= 4 and Y <= 5 then
+			if settingsTable.isDarkMode == true then
+				paintutils.drawFilledBox(18, 11, 50, 19, colours.black)
+				mvText.dPrint("Give your computer a name", nil, nil, 18, 11, 2048, colours.black)
+				mvText.dPrint("Name: ", nil, nil, 18, 12, 1, colours.black)
+			else
+				paintutils.drawFilledBox(18, 11, 50, 19, 1)
+				mvText.dPrint("Give your computer a name", nil, nil, 18, 11, 2048, 1)
+				mvText.dPrint("Name: ", nil, nil, 18, 12, colours.black, 1)
+			end
+			getLabel = read()
+			if getLabel == "" or getLabel == nil then
+				--Let's do nothing
+			else
+				os.setComputerLabel(getLabel)
+			end
+			AboutUI()
+			break
+		end
+		if X >= 35 and X <= 50 and Y >= 4 and Y <= 5 then
+			if hasDrawnDisk == nil or hasDrawnDisk == false then
+				if settingsTable.isDarkMode == true then
+					paintutils.drawFilledBox(18, 11, 50, 19, colours.black)
+					mvText.dPrint("Storage information", nil, nil, 18, 11, 2048, colours.black)
+					mvText.dPrint("Apps       : "..math.ceil((math.ceil( appSize / 100 ) / 10)).."KB", nil, nil, 18, 12, 1, colours.black)
+					mvText.dPrint("Documents  : "..math.ceil((math.ceil( docSize / 100 ) / 10)).."KB", nil, nil, 18, 13, 1, colours.black)
+					mvText.dPrint("mvOS total : "..math.ceil((math.ceil( mvOSSize / 100 ) / 10)).."KB", nil, nil, 18, 14, 1, colours.black)
+					mvText.dPrint("Other      : "..math.ceil((math.ceil( mvCoreSize / 100 ) / 10)).."KB", nil, nil, 18, 15, 1, colours.black)
+					mvText.dPrint("Used       : "..math.ceil((math.ceil( usedSize / 100 ) / 10)).."KB", nil, nil, 18, 17, 1, colours.black)
+					if totalSize >= 1000 * 1000 then
+						mvText.dPrint("Disk size  : "..math.ceil((math.ceil( totalSize / ( 100 * 1000 ) ) / 10)).."MB", nil, nil, 18, 18, 1, colours.black)
+					elseif totalSize >= 1000 then
+						mvText.dPrint("Disk size  : "..math.ceil((math.ceil( totalSize / 100 ) / 10)).."KB", nil, nil, 18, 18, 1, colours.black)
+					else
+						mvText.dPrint("Disk size  : "..math.ceil(totalSize).."B", nil, nil, 18, 18, 1, colours.black)
+					end
+				else
+					paintutils.drawFilledBox(18, 11, 50, 19, 1)
+					mvText.dPrint("Storage information", nil, nil, 18, 11, 2048, 1)
+					mvText.dPrint("Apps       : "..math.ceil((math.ceil( appSize / 100 ) / 10)).."KB", nil, nil, 18, 12, colours.black, 1)
+					mvText.dPrint("Documents  : "..math.ceil((math.ceil( docSize / 100 ) / 10)).."KB", nil, nil, 18, 13, colours.black, 1)
+					mvText.dPrint("mvOS total : "..math.ceil((math.ceil( mvOSSize / 100 ) / 10)).."KB", nil, nil, 18, 14, colours.black, 1)
+					mvText.dPrint("Other      : "..math.ceil((math.ceil( mvCoreSize / 100 ) / 10)).."KB", nil, nil, 18, 15, colours.black, 1)
+					mvText.dPrint("Used       : "..math.ceil((math.ceil( usedSize / 100 ) / 10)).."KB", nil, nil, 18, 17, colours.black, 1)
+					if totalSize >= 1000 * 1000 then
+						mvText.dPrint("Disk size  : "..math.ceil((math.ceil( totalSize / ( 100 * 1000 ) ) / 10)).."MB", nil, nil, 18, 18, colours.black, 1)
+					elseif totalSize >= 1000 then
+						mvText.dPrint("Disk size  : "..math.ceil((math.ceil( totalSize / 100 ) / 10)).."KB", nil, nil, 18, 18, colours.black, 1)
+					else
+						mvText.dPrint("Disk size  : "..math.ceil(totalSize).."B", nil, nil, 18, 18, colours.black, 1)
+					end
+				end
+				hasDrawnDisk = true
+			else
+				hasDrawnDisk = false
+				AboutUI()
+				break
+			end
+		end
+		if X >= 18 and X <= 33 and Y >= 7 and Y <= 8 then
+			if hasDrawnDisk == nil or hasDrawnDisk == false then
+				if settingsTable.isDarkMode == true then
+					paintutils.drawFilledBox(18, 11, 50, 19, colours.black)
+					mvText.dPrint("mvOS specifications", nil, nil, 18, 11, 2048, colours.black)
+					mvText.dPrint("Version    : "..systemInfo.version, nil, nil, 18, 12, 1, colours.black)
+					mvText.dPrint("Build      : "..systemInfo.build, nil, nil, 18, 13, 1, colours.black)
+					mvText.dPrint("Name       : "..systemInfo.codename, nil, nil, 18, 14, 1, colours.black)
+					mvText.dPrint("Machine ID : "..os.getComputerID(), nil, nil, 18, 15, 1, colours.black)
+					
+				else
+					paintutils.drawFilledBox(18, 11, 50, 19, 1)
+					mvText.dPrint("mvOS specifications", nil, nil, 18, 11, 2048, 1)
+					mvText.dPrint("Version    : "..systemInfo.version, nil, nil, 18, 12, colours.black, 1)
+					mvText.dPrint("Build      : "..systemInfo.build, nil, nil, 18, 13, colours.black, 1)
+					mvText.dPrint("Name       : "..systemInfo.codename, nil, nil, 18, 14, colours.black, 1)
+					mvText.dPrint("Machine ID : "..os.getComputerID(), nil, nil, 18, 15, colours.black, 1)
+				end
+				hasDrawnDisk = true
+			else
+				hasDrawnDisk = false
+				AboutUI()
+				break
+			end
+		end
+		if X >= 35 and X <= 50 and Y >= 7 and Y <= 8 then
+			if hasDrawnDisk == nil or hasDrawnDisk == false then
+				if settingsTable.isDarkMode == true then
+					paintutils.drawFilledBox(18, 11, 50, 19, colours.black)
+					mvText.dPrint("mvOS specifications", nil, nil, 18, 11, 2048, colours.black)
+					mvText.dPrint("Version    : "..systemInfo.version, nil, nil, 18, 12, 1, colours.black)
+					mvText.dPrint("Build      : "..systemInfo.build, nil, nil, 18, 13, 1, colours.black)
+					mvText.dPrint("Name       : "..systemInfo.codename, nil, nil, 18, 14, 1, colours.black)
+					mvText.dPrint("Machine ID : "..os.getComputerID(), nil, nil, 18, 15, 1, colours.black)
+					
+				else
+					paintutils.drawFilledBox(18, 11, 50, 19, 1)
+					mvText.dPrint("mvOS specifications", nil, nil, 18, 11, 2048, 1)
+					mvText.dPrint("Version    : "..systemInfo.version, nil, nil, 18, 12, colours.black, 1)
+					mvText.dPrint("Build      : "..systemInfo.build, nil, nil, 18, 13, colours.black, 1)
+					mvText.dPrint("Name       : "..systemInfo.codename, nil, nil, 18, 14, colours.black, 1)
+					mvText.dPrint("Machine ID : "..os.getComputerID(), nil, nil, 18, 15, colours.black, 1)
+				end
+				hasDrawnDisk = true
+			else
+				hasDrawnDisk = false
+				AboutUI()
+				break
+			end
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			sleep()
+			break
+		end
+		if key == mvExtras.keyMapper("Tab") then
+			sleep()
+			SystemUI()
+			break
+		end
+		if key == mvExtras.keyMapper("1") then
+			sleep()
+			if settingsTable.isDarkMode == true then
+				paintutils.drawFilledBox(18, 11, 50, 19, colours.black)
+				mvText.dPrint("Give your computer a name", nil, nil, 18, 11, 2048, colours.black)
+				mvText.dPrint("Name: ", nil, nil, 18, 12, 1, colours.black)
+			else
+				paintutils.drawFilledBox(18, 11, 50, 19, 1)
+				mvText.dPrint("Give your computer a name", nil, nil, 18, 11, 2048, 1)
+				mvText.dPrint("Name: ", nil, nil, 18, 12, colours.black, 1)
+			end
+			getLabel = read()
+			if getLabel == "" or getLabel == nil then
+				--Let's do nothing
+			else
+				os.setComputerLabel(getLabel)
+			end
+			AboutUI()
+			break
+		end
+		if key == mvExtras.keyMapper("2") then
+			if hasDrawnDisk == nil or hasDrawnDisk == false then
+				if settingsTable.isDarkMode == true then
+					paintutils.drawFilledBox(18, 11, 50, 19, colours.black)
+					mvText.dPrint("Storage information", nil, nil, 18, 11, 2048, colours.black)
+					mvText.dPrint("Apps       : "..math.ceil((math.ceil( appSize / 100 ) / 10)).."KB", nil, nil, 18, 12, 1, colours.black)
+					mvText.dPrint("Documents  : "..math.ceil((math.ceil( docSize / 100 ) / 10)).."KB", nil, nil, 18, 13, 1, colours.black)
+					mvText.dPrint("mvOS total : "..math.ceil((math.ceil( mvOSSize / 100 ) / 10)).."KB", nil, nil, 18, 14, 1, colours.black)
+					mvText.dPrint("Other      : "..math.ceil((math.ceil( mvCoreSize / 100 ) / 10)).."KB", nil, nil, 18, 15, 1, colours.black)
+					mvText.dPrint("Used       : "..math.ceil((math.ceil( usedSize / 100 ) / 10)).."KB", nil, nil, 18, 17, 1, colours.black)
+					if totalSize >= 1000 * 1000 then
+						mvText.dPrint("Disk size  : "..math.ceil((math.ceil( totalSize / ( 100 * 1000 ) ) / 10)).."MB", nil, nil, 18, 18, 1, colours.black)
+					elseif totalSize >= 1000 then
+						mvText.dPrint("Disk size  : "..math.ceil((math.ceil( totalSize / 100 ) / 10)).."KB", nil, nil, 18, 18, 1, colours.black)
+					else
+						mvText.dPrint("Disk size  : "..math.ceil(totalSize).."B", nil, nil, 18, 18, 1, colours.black)
+					end
+				else
+					paintutils.drawFilledBox(18, 11, 50, 19, 1)
+					mvText.dPrint("Storage information", nil, nil, 18, 11, 2048, 1)
+					mvText.dPrint("Apps       : "..math.ceil((math.ceil( appSize / 100 ) / 10)).."KB", nil, nil, 18, 12, colours.black, 1)
+					mvText.dPrint("Documents  : "..math.ceil((math.ceil( docSize / 100 ) / 10)).."KB", nil, nil, 18, 13, colours.black, 1)
+					mvText.dPrint("mvOS total : "..math.ceil((math.ceil( mvOSSize / 100 ) / 10)).."KB", nil, nil, 18, 14, colours.black, 1)
+					mvText.dPrint("Other      : "..math.ceil((math.ceil( mvCoreSize / 100 ) / 10)).."KB", nil, nil, 18, 15, colours.black, 1)
+					mvText.dPrint("Used       : "..math.ceil((math.ceil( usedSize / 100 ) / 10)).."KB", nil, nil, 18, 17, colours.black, 1)
+					if totalSize >= 1000 * 1000 then
+						mvText.dPrint("Disk size  : "..math.ceil((math.ceil( totalSize / ( 100 * 1000 ) ) / 10)).."MB", nil, nil, 18, 18, colours.black, 1)
+					elseif totalSize >= 1000 then
+						mvText.dPrint("Disk size  : "..math.ceil((math.ceil( totalSize / 100 ) / 10)).."KB", nil, nil, 18, 18, colours.black, 1)
+					else
+						mvText.dPrint("Disk size  : "..math.ceil(totalSize).."B", nil, nil, 18, 18, colours.black, 1)
+					end
+				end
+				hasDrawnDisk = true
+			else
+				hasDrawnDisk = false
+				AboutUI()
+				break
+			end
+		end
+		if key == mvExtras.keyMapper("3") or key == mvExtras.keyMapper("4") then
+			if hasDrawnDisk == nil or hasDrawnDisk == false then
+				if settingsTable.isDarkMode == true then
+					paintutils.drawFilledBox(18, 11, 50, 19, colours.black)
+					mvText.dPrint("mvOS specifications", nil, nil, 18, 11, 2048, colours.black)
+					mvText.dPrint("Version    : "..systemInfo.version, nil, nil, 18, 12, 1, colours.black)
+					mvText.dPrint("Build      : "..systemInfo.build, nil, nil, 18, 13, 1, colours.black)
+					mvText.dPrint("Name       : "..systemInfo.codename, nil, nil, 18, 14, 1, colours.black)
+					mvText.dPrint("Machine ID : "..os.getComputerID(), nil, nil, 18, 15, 1, colours.black)
+					
+				else
+					paintutils.drawFilledBox(18, 11, 50, 19, 1)
+					mvText.dPrint("mvOS specifications", nil, nil, 18, 11, 2048, 1)
+					mvText.dPrint("Version    : "..systemInfo.version, nil, nil, 18, 12, colours.black, 1)
+					mvText.dPrint("Build      : "..systemInfo.build, nil, nil, 18, 13, colours.black, 1)
+					mvText.dPrint("Name       : "..systemInfo.codename, nil, nil, 18, 14, colours.black, 1)
+					mvText.dPrint("Machine ID : "..os.getComputerID(), nil, nil, 18, 15, colours.black, 1)
+				end
+				hasDrawnDisk = true
+			else
+				hasDrawnDisk = false
+				AboutUI()
+				break
+			end
+		end
+	end
+end
+end
+
+function SystemClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 4 then
+			AboutUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 10 then
+			WallpaperUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 13 then
+			PersonalUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 16 then
+			UpdateUI()
+			break
+		end
+		if X == 50 and Y == 4 then
+			if settingsTable.doNotify == true then
+				settingsTable.doNotify = false
+				saveDesktopSettings()
+			else
+				settingsTable.doNotify = true
+				saveDesktopSettings()
+			end
+			SystemUI()
+			break
+		end
+		if X == 50 and Y == 7 then
+			if settingsTable.isLocked == true then
+				settingsTable.isLocked = false
+				saveDesktopSettings()
+			else
+				settingsTable.isLocked = true
+				saveDesktopSettings()
+			end
+			SystemUI()
+			break
+		end
+		if X == 50 and Y == 10 then
+			if settingsTable.is24Hour == true then
+				settingsTable.is24Hour = false
+				saveDesktopSettings()
+			else
+				settingsTable.is24Hour = true
+				saveDesktopSettings()
+			end
+			SystemUI()
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			sleep()
+			break
+		end
+		if key == mvExtras.keyMapper("Tab") then
+			sleep()
+			WallpaperUI()
+			break
+		end
+		if key == mvExtras.keyMapper("1") then
+			if settingsTable.doNotify == true then
+				settingsTable.doNotify = false
+				saveDesktopSettings()
+			else
+				settingsTable.doNotify = true
+				saveDesktopSettings()
+			end
+			SystemUI()
+			break
+		end
+		if key == mvExtras.keyMapper("2") then
+			if settingsTable.isLocked == true then
+				settingsTable.isLocked = false
+				saveDesktopSettings()
+			else
+				settingsTable.isLocked = true
+				saveDesktopSettings()
+			end
+			SystemUI()
+			break
+		end
+		if key == mvExtras.keyMapper("3") then
+			if settingsTable.is24Hour == true then
+				settingsTable.is24Hour = false
+				saveDesktopSettings()
+			else
+				settingsTable.is24Hour = true
+				saveDesktopSettings()
+			end
+			SystemUI()
+			break
+		end
+	end
+end
+end
+
+function WallpaperClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 4 then
+			AboutUI()
+			break
+		end		
+		if X >= 1 and X <= 15 and Y == 7 then
+			SystemUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 13 then
+			PersonalUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 16 then
+			UpdateUI()
+			break
+		end
+		if X == 50 and Y == 4 then
+			settingsTable.bgImage = ".system/desktop/bg/Forest"
+			saveDesktopSettings()
+			WallpaperUI()
+			break
+		end
+		if X == 50 and Y == 7 then
+			settingsTable.bgImage = ".system/desktop/bg/mvFlow"
+			saveDesktopSettings()
+			WallpaperUI()
+			break
+		end
+		if X == 50 and Y == 10 then
+			settingsTable.bgImage = ".system/desktop/bg/Cobalt"
+			saveDesktopSettings()
+			WallpaperUI()
+			break
+		end
+		if X == 50 and Y == 13 then
+			settingsTable.bgImage = ".system/desktop/bg/Sentinel"
+			saveDesktopSettings()
+			WallpaperUI()
+			break
+		end
+		if X == 50 and Y == 16 then
+			settingsTable.bgImage = ".system/desktop/bg/Wave"
+			saveDesktopSettings()
+			WallpaperUI()
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			sleep()
+			break
+		end
+		if key == mvExtras.keyMapper("Tab") then
+			sleep()
+			PersonalUI()
+			break
+		end
+	end
+end
+end
+
+function PersonalClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 4 then
+			AboutUI()
+			break
+		end		
+		if X >= 1 and X <= 15 and Y == 7 then
+			SystemUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 10 then
+			WallpaperUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 13 then
+			PersonalUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 16 then
+			UpdateUI()
+			break
+		end
+		if X == 50 and Y == 4 then
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(18, 4, 50, 4, colours.black)
+			else
+				paintutils.drawLine(18, 4, 50, 4, 1)
+			end
+			term.setTextColour(2048)
+			term.setCursorPos(18, 4)
+			write("New name: ")
+			local getName = read()
+			personalTable.username = getName
+			savePersonalSettings()
+			PersonalUI()
+			break
+		end
+		if X == 50 and Y == 7 then
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(18, 7, 50, 7, colours.black)
+			else
+				paintutils.drawLine(18, 7, 50, 7, 1)
+			end
+			term.setTextColour(2048)
+			term.setCursorPos(18, 7)
+			write("New password: ")
+			local getPass = read('\7')
+			personalTable.password = mvSecurity.generateTextHash(getPass, "return")
+			savePersonalSettings()
+			PersonalUI()
+			break
+		end
+		if X == 50 and Y == 10 then
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(18, 10, 50, 10, colours.black)
+			else
+				paintutils.drawLine(18, 10, 50, 10, 1)
+			end
+			term.setTextColour(2048)
+			term.setCursorPos(18, 10)
+			write("New hint: ")
+			local getHint = read()
+			personalTable.hint = getHint
+			savePersonalSettings()
+			PersonalUI()
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			sleep()
+			break
+		end
+		if key == mvExtras.keyMapper("Tab") then
+			sleep()
+			UpdateUI()
+			break
+		end
+		if key == mvExtras.keyMapper("1") then
+			sleep()
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(18, 4, 50, 4, colours.black)
+			else
+				paintutils.drawLine(18, 4, 50, 4, 1)
+			end
+			term.setTextColour(2048)
+			term.setCursorPos(18, 4)
+			write("New name: ")
+			local getName = read()
+			personalTable.username = getName
+			savePersonalSettings()
+			PersonalUI()
+			break
+		end
+		if key == mvExtras.keyMapper("2") then
+			sleep()
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(18, 7, 50, 7, colours.black)
+			else
+				paintutils.drawLine(18, 7, 50, 7, 1)
+			end
+			term.setTextColour(2048)
+			term.setCursorPos(18, 7)
+			write("New password: ")
+			local getPass = read('\7')
+			personalTable.password = mvSecurity.generateTextHash(getPass, "return")
+			savePersonalSettings()
+			PersonalUI()
+			break
+		end
+		if key == mvExtras.keyMapper("3") then
+			sleep()
+			if settingsTable.isDarkMode == true then
+				paintutils.drawLine(18, 10, 50, 10, colours.black)
+			else
+				paintutils.drawLine(18, 10, 50, 10, 1)
+			end
+			term.setTextColour(2048)
+			term.setCursorPos(18, 10)
+			write("New hint: ")
+			local getHint = read()
+			personalTable.hint = getHint
+			savePersonalSettings()
+			PersonalUI()
+			break
+		end
+	end
+end
+end
+
+function UpdateClick()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 4 then
+			AboutUI()
+			break
+		end		
+		if X >= 1 and X <= 15 and Y == 7 then
+			SystemUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 10 then
+			WallpaperUI()
+			break
+		end
+		if X >= 1 and X <= 15 and Y == 13 then
+			PersonalUI()
+			break
+		end
+		if X >= 18 and X <= 50 and Y >= 10 and Y <= 11 then
+			if doUpdate == true then
+				if fs.exists("disk/.install/instmvos") then
+					shell.run("disk/.install/instmvos unattended-nomvcore")
+				else
+					if settingsTable.isDarkMode == true then
+						mvText.dPrint("Could not install update", nil, nil, 18, 14, colours.red, colours.black)
+					else
+						mvText.dPrint("Could not install update", nil, nil, 18, 14, colours.red, 1)
+					end
+				end
+			end
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("End") then
+			sleep()
+			break
+		end
+		if key == mvExtras.keyMapper("Tab") then
+			sleep()
+			AboutUI()
+			break
+		end
+	end
+	if event == "disk" then
+		UpdateUI()
+		break
+	end
+	if event == "disk_eject" then
+		UpdateUI()
+		break
+	end
+end
+end
+
+local launchHandler = tArgs[1]
+if launchHandler == "about" then
+	AboutUI()
+elseif launchHandler == "system" then
+	SystemUI()
+elseif launchHandler == "wallpaper" then
+	WallpaperUI()
+elseif launchHandler == "personal" then
+	PersonalUI()
+elseif launchHandler == "update" then
+	UpdateUI()
+else
+	AboutUI()
+end

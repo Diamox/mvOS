@@ -1,0 +1,78 @@
+--Interact with external hardware
+function diskIsPresent()
+	for _, side in ipairs(rs.getSides()) do
+		if peripheral.isPresent(side) and peripheral.getType(side) == "drive" then
+			if disk.isPresent(side) then
+				return true
+			else
+				return false
+			end
+			break
+		end
+	end
+end
+
+function diskGetSide()
+	for _, side in ipairs(rs.getSides()) do
+		if peripheral.isPresent(side) and peripheral.getType(side) == "drive" then
+			if disk.isPresent(side) then
+				return side
+			else
+				return false
+			end
+			break
+		end
+	end
+end
+
+function diskHasData()
+	for _, side in ipairs(rs.getSides()) do
+		if peripheral.isPresent(side) and peripheral.getType(side) == "drive" then
+			if disk.hasData(side) then
+				return true
+			else
+				return false
+			end
+			break
+		end
+	end
+end
+
+function diskHasAudio()
+	for _, side in ipairs(rs.getSides()) do
+		if peripheral.isPresent(side) and peripheral.getType(side) == "drive" then
+			if disk.hasAudio(side) then
+				return true
+			else
+				return false
+			end
+			break
+		end
+	end
+end
+
+function printerHasInk()
+	local printer = peripheral.find("printer")
+	if printer then
+		if printer.getInkLevel() == 0 then
+			return false
+		else
+			return true
+		end
+	else
+		return false
+	end
+end
+
+function printerHasPaper()
+	local printer = peripheral.find("printer")
+	if printer then
+		if printer.getPaperLevel() == 0 then
+			return false
+		else
+			return true
+		end
+	else
+		return false
+	end
+end

@@ -1,0 +1,11 @@
+{
+  isRGBActivityBar = false,
+  is24Hour = true,
+  bgImage = ".system/desktop/bg/Forest",
+  isAnimated = true,
+  isAutoDarkMode = true,
+  doNotify = true,
+  isDarkMode = false,
+  isLocked = false,
+  isWireless = true,
+}

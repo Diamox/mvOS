@@ -1,0 +1,398 @@
+--[[ Variables ]]--
+local tArgs = {...}
+version = "1.0"
+screenX, screenY = term.getSize()
+progress = false
+pastebin_url = "PRUuJxf6"
+path = shell.dir()
+programPath = shell.getRunningProgram()
+
+local appkeys = {"GU7GAL-HLW2TGXR4J","P99XV4-6Y359T8584","5KGYY5-YE2JLLG74H"}
+
+-- Clear screen and set cursor pos
+function cScreen(swidth, sheight)
+  term.clear()
+  term.setCursorPos(swidth, sheight)
+end
+
+-- Wait for key pressing
+function waitForExitKey()
+	mvUI.basicUI(".system/applications/system/netinfo/config",false)
+	if settingsTable.isDarkMode == true then
+		mvText.dPrint("We came up empty! Nothing was found for...", nil, nil, 4, 4, 1, colours.black)
+		mvText.dPrint(input, nil, nil, 4, 5, 1, colours.black)
+		mvText.dPrint("Click the title to go home.", nil, nil, 4, 7, 1, colours.black)
+		mvText.dPrint("<", nil, nil, 48, 1, colours.orange, colours.black)
+	else
+		mvText.dPrint("We came up empty! Nothing was found for...", nil, nil, 4, 4, colours.black, 1)
+		mvText.dPrint(input, nil, nil, 4, 5, colours.black, 1)
+		mvText.dPrint("Click the title to go home.", nil, nil, 4, 7, colours.black, 1)
+		mvText.dPrint("<", nil, nil, 48, 1, colours.orange, 1)
+	end
+	while true do
+		event, key, X, Y = os.pullEvent()
+		if event == "mouse_click" then
+			if X >= 1 and X <= 9 and Y == 1 then
+				MainUI()
+				break 
+			end
+			if X == 48 and Y == 1 then
+				searchBar()
+				input = read()
+				if input == nil or input == "" then
+					MainUI()
+				else
+					if settingsTable.isDarkMode == true then
+						paintutils.drawFilledBox(2, 15, 50, 17, colours.black)
+					else
+						paintutils.drawFilledBox(2, 15, 50, 17, 1)
+					end
+					progress, tab = getMessage(input)
+					if progress then
+						printMessage(tab)
+					end
+				end
+				break
+			end
+			if X >= 49 and X <= 51 and Y == 1 then 
+				break
+			end
+		end
+		if event == "key" then
+			if key == mvExtras.keyMapper("Home") then
+				MainUI()
+				break
+			end
+			if key == mvExtras.keyMapper("SKey") then
+				searchBar()
+				input = read()
+				if input == nil or input == "" then
+					MainUI()
+				else
+					if settingsTable.isDarkMode == true then
+						paintutils.drawFilledBox(2, 15, 50, 17, colours.black)
+					else
+						paintutils.drawFilledBox(2, 15, 50, 17, 1)
+					end
+					progress, tab = getMessage(input)
+					if progress then
+						printMessage(tab)
+					end
+				end
+				break
+			end
+			if key == mvExtras.keyMapper("End") then
+				break
+			end
+		end
+	end
+end
+
+-- Print a progress bar
+function progressBar()
+	if settingsTable.isDarkMode == true then
+		term.setTextColour(1)
+		term.setBackgroundColour(colours.black)
+	else
+		term.setTextColour(colours.black)
+		term.setBackgroundColour(1)
+	end
+	progStep = 1
+	while true do
+		if progStep == 1 or progStep == nil then
+			term.setCursorPos(4, 16)
+			print("Loading   ")
+			sleep(0.2)
+			progStep = 2
+		end
+		if progStep == 2 then
+			term.setCursorPos(4, 16)
+			print("Loading.  ")
+			sleep(0.2)
+			progStep = 3
+		end
+		if progStep == 3 then
+			term.setCursorPos(4, 16)
+			print("Loading.. ")
+			sleep(0.2)
+			progStep = 4
+		end
+		if progStep == 4 then
+			term.setCursorPos(4, 16)
+			print("Loading...")
+			sleep(0.2)
+			progStep = 1
+		end
+	end
+end
+
+-- Split a paragraph into single lines
+function splitLine( text )
+  local swidth = term.getSize()
+  local function split( str, regex )
+    local t = { }
+    local fpat = "(.-)"..regex
+    local last_end = 1
+    local s, e, cap = str:find(fpat, 1)
+    while s do
+      if s ~= 1 or cap ~= "" then
+        table.insert(t,cap)
+      end
+      last_end = e+1
+      s, e, cap = str:find(fpat, last_end)
+    end
+    if last_end <= #str then
+      cap = str:sub(last_end)
+      table.insert(t, cap)
+    end
+    return t
+  end
+  local currLine = ""
+  local words = split( text, " " )
+  local t = {}
+  for i = 1, #words do
+    if #currLine + #words[i] + 1 > swidth then
+      table.insert( t, currLine )
+      currLine = words[i].." "
+    else
+      currLine = currLine..words[i].." "
+    end
+    if i == #words then 
+      table.insert( t, currLine ) 
+    end
+  end
+return t
+end
+
+-- Get the answer from Wolfram Alpha
+function getMessage(_input)
+  _input = textutils.urlEncode(_input)
+  http.request("http://api.wolframalpha.com/v2/query?appid="..appkeys[math.random(1,#appkeys)].."&input=".._input.."&format=plaintext")
+  parallel.waitForAny(progressBar,
+  function()
+    repeat sEvent, url, sourceText = os.pullEvent() until sEvent == "http_success" or sEvent == "http_failure"
+  end)
+  if sEvent == "http_success" then
+    local respondedText = sourceText.readAll()
+    text = {}
+    mainTable = {}
+    index = 1
+    for content in respondedText:gmatch "<plaintext>(.-)</plaintext>" do
+      table.insert(text, content)
+      text[index] = string.gsub(text[index],"&apos;","'")
+      text[index] = string.gsub(text[index],"&quot;","\"")
+      text[index] = string.gsub(text[index],"&amp;","&")
+      text[index] = string.gsub(text[index],"&lt;","<")
+      text[index] = string.gsub(text[index],"&gt;",">")
+      index = index + 1
+    end
+    cScreen(1,1)
+    if text[1] ~= nil then
+      screenx = term.getSize()
+      for i = 1, #text do
+        if #text[i] >= screenx-5 then
+          k = splitLine(text[i])
+          for l = 1, #k do
+            table.insert(mainTable, k[l])
+          end
+        else
+          table.insert(mainTable, text[i])
+        end
+      end
+      return true, mainTable
+    else
+	  if settingsTable.isDarkMode == true then
+		mvText.dPrint("No answer found", nil, nil, 4, 4, 1, colours.black)
+	  else
+		mvText.dPrint("No answer found", nil, nil, 4, 4, colours.black, 1)
+	  end
+      waitForExitKey()
+      return false, nil
+    end
+  elseif sEvent == "http_failure" then
+    cScreen(1,1)
+    write("Couldn't contact server")
+    waitForExitKey()
+    return false, nil
+  end
+end
+
+-- Print the answer
+function printMessage(_table)
+  yPos = 1
+  term.clear()
+  cScreen(1,1)
+  mvUI.basicUI(".system/applications/system/netinfo/config",false)
+  if settingsTable.isDarkMode == true then
+	mvText.dPrint("<", nil, nil, 48, 1, colours.orange, colours.black)
+	term.setBackgroundColour(colours.black)
+	term.setTextColour(1)
+  else
+	mvText.dPrint("<", nil, nil, 48, 1, colours.orange, 1)
+	term.setBackgroundColour(1)
+	term.setTextColour(colours.black)
+  end
+  W, H = term.getSize()
+  term.setCursorPos(W-2-#input, 4)
+  write([["]]..input..[["]])
+    while true do
+    for i = 6, screenY do
+      term.setCursorPos(1, i)
+      term.clearLine()
+      if not _table[i + yPos - 6] then
+        break
+      else
+        if string.find(_table[i + yPos - 6], "\n") then
+          _table[i + yPos - 6] = string.sub(_table[i + yPos - 6], 1, string.find(_table[i + yPos - 6], "\n") - 1)
+          .. " " ..
+          string.sub(_table[i + yPos - 6], string.find(_table[i + yPos - 6], "\n") + 1)
+        end
+        write(_table[i + yPos - 6])
+      end
+    end
+    e, button, X, Y = os.pullEvent()
+    if e == "mouse_scroll" and term.isColor() then
+      if button == 1 and yPos < #_table - (screenY - 6) then
+      -- Down
+      yPos = yPos + 1
+    elseif button == -1 and yPos > 1 then
+      yPos = yPos - 1
+      end
+    elseif e == "key" then
+      if button == keys.down and yPos < #_table - (screenY - 6) then
+        -- Down
+        yPos = yPos + 1
+      elseif button == keys.up and yPos > 1 then
+        --Up
+        yPos = yPos - 1
+      end
+	  if button == mvExtras.keyMapper("Home") then
+		MainUI()
+		break
+	  end
+	  if button == mvExtras.keyMapper("SKey") then
+		sleep()
+		searchBar()
+		input = read()
+		if input == nil or input == "" then
+			MainUI()
+		else
+			progress, tab = getMessage(input)
+			if progress then
+				printMessage(tab)
+			end
+		end
+		break
+	  end
+	  if button == mvExtras.keyMapper("End") then
+		break
+	  end
+    elseif e == "mouse_click" then
+     if X >= 49 and X <= 51 and Y == 1 then
+      break
+     end
+	 if X == 48 and Y == 1 then
+		searchBar()
+		input = read()
+		if input == nil or input == "" then
+			MainUI()
+		else
+			if settingsTable.isDarkMode == true then
+				paintutils.drawFilledBox(2, 15, 50, 17, colours.black)
+			else
+				paintutils.drawFilledBox(2, 15, 50, 17, 1)
+			end
+			progress, tab = getMessage(input)
+			if progress then
+				printMessage(tab)
+			end
+		end
+		break
+	end
+     if X >= 1 and X <= 9 and Y == 1 then
+	  MainUI()
+      break
+     end
+    end
+  end
+  sleep(0.1)
+end
+
+function MainUI()
+	mvUI.basicUI(".system/applications/system/netinfo/config",true)
+	if settingsTable.isDarkMode == true then
+		mvText.dPrint("The answers you want, the info you need.", nil, nil, 4, 7, colours.orange, colours.black)
+		mvText.dPrint("Sorry, no leftovers remaining.", nil, nil, 4, 11, colours.orange, colours.black)
+		mvText.dPrint("WolframAlpha can tell you anything you", nil, nil, 4, 8, 1, colours.black)
+		mvText.dPrint("need to know. Instantly.", nil, nil, 4, 9, 1, colours.black)
+		mvText.dPrint("NetInfo leaves absolutely nothing on your", nil, nil, 4, 12, 1, colours.black)
+		mvText.dPrint("computer once you've finished.", nil, nil, 4, 13, 1, colours.black)
+		mvText.dPrint("<", nil, nil, 48, 1, colours.orange, colours.black)
+	else
+		mvText.dPrint("The answers you want, the info you need.", nil, nil, 4, 7, colours.orange, 1)
+		mvText.dPrint("Sorry, no leftovers remaining.", nil, nil, 4, 11, colours.orange, 1)
+		mvText.dPrint("WolframAlpha can tell you anything you", nil, nil, 4, 8, colours.black, 1)
+		mvText.dPrint("need to know. Instantly.", nil, nil, 4, 9, colours.black, 1)
+		mvText.dPrint("NetInfo leaves absolutely nothing on your", nil, nil, 4, 12, colours.black, 1)
+		mvText.dPrint("computer once you've finished.", nil, nil, 4, 13, colours.black, 1)
+		mvText.dPrint("<", nil, nil, 48, 1, colours.orange, 1)
+	end
+	MainUIClick()
+end
+
+--Search Bar UI
+function searchBar()
+	if settingsTable.isDarkMode == true then
+		paintutils.drawLine(1, 1, 48, 1, colours.black)
+		mvText.dPrint("Search> ", nil, nil, 2, 1, colours.orange, colours.black)
+	else
+		paintutils.drawLine(1, 1, 48, 1, 1)
+		mvText.dPrint("Search> ", nil, nil, 2, 1, colours.orange, 1)
+	end
+end
+
+--Click Functions
+function MainUIClick()
+while true do
+	event, key, X, Y = os.pullEvent()
+	if event == "mouse_click" then
+		if X >= 49 and X <= 51 and Y == 1 then
+			break
+		end
+		if X == 48 and Y == 1 then
+			searchBar()
+			input = read()
+			if input == nil or input == "" then
+				MainUI()
+			else
+				progress, tab = getMessage(input)
+				if progress then
+					printMessage(tab)
+				end
+			end
+			break
+		end
+	end
+	if event == "key" then
+		if key == mvExtras.keyMapper("SKey") then
+			sleep()
+			searchBar()
+			input = read()
+			if input == nil or input == "" then
+				MainUI()
+			else
+				progress, tab = getMessage(input)
+				if progress then
+					printMessage(tab)
+				end
+			end
+			break
+		end
+		if key == mvExtras.keyMapper("End") then
+			break
+		end
+	end
+end
+end
+
+MainUI()

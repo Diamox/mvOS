@@ -1,0 +1,63 @@
+--Enables or disables a rednet moden
+function rednetInit(bool)
+	x, y = term.getSize()
+	for n,side in ipairs(rs.getSides()) do
+		if peripheral.getType(side) == "modem" then
+			if bool == true then
+               rednet.open(side)
+               return true
+			elseif bool == false then
+               rednet.close(side)
+               return true
+			else
+               mvUI.apiError("MVSOFTWARE_MVCORE","REDNET_INIT_ERROR")
+			end
+		break
+		end
+	end
+end
+
+function sendFile(receiverID, text, text2)
+	if receiverID == nil then
+		mvUI.apiError("MVSOFTWARE_MVCORE", "SENDFILE_RECIEVERID_NIL")
+		return false
+	else
+		if fs.exists(text) then
+			openFile = fs.open(text,"r")
+			fileContents = openFile.readAll()
+			openFile.close()
+			if text2 == nil then
+				error("MVSOFTWARE_MVCORE", "SENDFILE_PROTOCOL_INVALID")
+				return false
+			else
+				rednet.send(receiverID, fileContents, text2)
+				return true
+			end
+		else
+			mvUI.apiError("MVSOFTWARE_MVCORE", "SENDFILE_FILE_NOTFOUND")
+			return false
+		end
+	end
+end
+
+--Call this function to recieve a file
+function receiveFile(text, text2)
+	if text == nil then
+		mvUI.apiError("MVSOFTWARE_MVCORE", "RECEIVEFILE_SENDERID_NIL")
+		return false
+	else
+		if text2 == nil then
+			mvUI.apiError("MVSOFTWARE_MVCORE", "RECEIVEFILE_PROTOCOL_INVALID")
+			return false
+		else
+			senderID, message, protocol = rednet.receive(text2)
+			if fs.exists(text) then
+				fs.delete(text)
+			end
+			writeFile = fs.open(text,"w")
+			writeFile.write(message)
+			writeFile.close()
+			return true
+		end
+	end
+end

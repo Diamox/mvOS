@@ -1,0 +1,149 @@
+--Variables
+local tArgs = {...}
+
+function UI()
+	--Draw interface
+	if hardware.capabilities.useColour == true then
+		mvCore.dPrint("Install mvCore", nil, nil, 2, 2, 2048, colours.black)
+		paintutils.drawBox(3, 5, 49, 16, 2048)
+	else
+		mvCore.dPrint("Install mvCore", nil, nil, 2, 2, 256, colours.black)
+		paintutils.drawBox(3, 5, 49, 16, 256)
+	end
+	mvCore.dPrint("[RETURN] Start install  |  [END] Return to menu", nil, nil, 2, 18, 1, colours.black)
+	mvCore.dPrint("mvCore is an advanced underlying system", nil, nil, 5, 6, 1, colours.black)
+	mvCore.dPrint("designed to extend the capabilities of ", nil, nil, 5, 7, 1, colours.black)
+	mvCore.dPrint("your computer and lay the groundwork for", nil, nil, 5, 8, 1, colours.black)
+	mvCore.dPrint("an extended operating system to be added", nil, nil, 5, 9, 1, colours.black)
+	mvCore.dPrint("on top at a later date if you wish.", nil, nil, 5, 10, 1, colours.black)
+	mvCore.dPrint("This will install mvCore on your computer.", nil, nil, 5, 12, 1, colours.black)
+	mvCore.dPrint("Any current installs will be replaced and", nil, nil, 5, 13, 1, colours.black)
+	mvCore.dPrint("your startup file will be replaced if one", nil, nil, 5, 14, 1, colours.black)
+	mvCore.dPrint("is present. ", nil, nil, 5, 15, 1, colours.black)
+end
+
+--Install function
+function install(autocont)
+	if not autocont == true then
+		paintutils.drawLine(1, 18, 51, 18, colours.black)
+		paintutils.drawFilledBox(4, 6, 48, 15, colours.black)
+		if hardware.capabilities.useColour == true then
+			mvCore.dPrint("Progress:", nil, nil, 5, 6, 2048, colours.black)
+		else
+			mvCore.dPrint("Progress:", nil, nil, 5, 6, 2048, colours.black)
+		end
+		--- Remove old files ---
+		mvCore.dPrint("-> Removing any old files", nil, nil, 5, 8, 1, colours.black)
+	end
+	if fs.exists(".preboot") then
+		fs.delete(".preboot")
+	end
+	if fs.exists("startup") then
+		fs.delete("startup")
+	end
+	--- Copy startup ---
+	if not autocont == true then
+		mvCore.dPrint("-> Copying startup", nil, nil, 5, 9, 1, colours.black)
+	end
+	if fs.exists("disk/.startup/startup") then
+		if not mvCore.validateHash("disk/.startup/startup","33f75f9db91e55b4544da753b0e5e69866527faff4e515f0947713deab6cf296") then
+			mvCore.fileError("disk/.startup/startup","corrupt")
+		end
+		fs.copy("disk/.startup/startup","startup")
+	else
+		mvCore.fileError("disk/.startup/startup","missing")
+	end
+	sleep()
+	--- Copy mvCore ---
+	if not autocont == true then
+		mvCore.dPrint("-> Copying mvCore", nil, nil, 5, 10, 1, colours.black)
+	end
+	--colsyslogo
+	if fs.exists("disk/.mvCore/img/colsyslogo") then
+		if not mvCore.validateHash("disk/.mvCore/img/colsyslogo", "df23fdce08a7b8bd900bdb9a7d73a4df25c5a8c64a9993b1a2e479c6f8d75831") then
+			mvCore.fileError("disk/.mvCore/img/syslogo","corrupt")
+		end
+	else
+		mvCore.fileError("disk/.mvCore/img/syslogo","missing")
+	end
+	sleep()
+	--bassyslogo
+	if fs.exists("disk/.mvCore/img/bassyslogo") then
+		if not mvCore.validateHash("disk/.mvCore/img/bassyslogo", "350aefb241a721184c403c12353bfee2fdc7df9d63eaca7a5b311a9d0c305d0d") then
+			mvCore.fileError("disk/.mvCore/img/syslogo","corrupt")
+		end
+	else
+		mvCore.fileError("disk/.mvCore/img/syslogo","missing")
+	end
+	sleep()
+	--mvSetup
+	if fs.exists("disk/.mvCore/mvSetup") then
+		if not mvCore.validateHash("disk/.mvCore/mvSetup", "35ece2492bf29129e368bbba3767db637f28a9f7b9ef5097ea4de189f2e53f1c") then
+			mvCore.fileError("disk/.mvCore/mvSetup","corrupt")
+		end
+	else
+		mvCore.fileError("disk/.mvCore/mvSetup","missing")
+	end
+	sleep()
+	--Shell
+	if fs.exists("disk/.mvCore/Shell") then
+		if not mvCore.validateHash("disk/.mvCore/Shell", "556bbdf77c5fd401e7253a07a93fc2d3c6b05dece78eea72b768ad25a9a46f6b") then
+			mvCore.fileError("disk/.mvCore/Shell","corrupt")
+		end
+	else
+		mvCore.fileError("disk/.mvCore/Shell","missing")
+	end
+	sleep()
+	--Copy them over
+	fs.copy("disk/.mvCore",".preboot")
+	if not autocont == true then
+		mvCore.dPrint("Installation completed", nil, nil, 5, 13, 1, colours.black)
+		mvCore.dPrint("Choose an option to continue...", nil, nil, 5, 14, 1, colours.black)
+		mvCore.dPrint("[RETURN] Back to Menu  |  [END] Eject and reboot", nil, nil, 2, 18, 1, colours.black)
+		getLastResponse()
+	end
+end
+
+--Get keys
+function getResponse()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "key" then
+		if key == mvCore.rawKeyMapper("Return") then
+			install()
+			break
+		end
+		if key == mvCore.rawKeyMapper("End") then
+			bootManager()
+			break
+		end
+	end
+end
+end
+
+--Get last keys
+function getLastResponse()
+while true do
+event, key, X, Y = os.pullEvent()
+	if event == "key" then
+		if key == mvCore.rawKeyMapper("Return") then
+			bootManager()
+			break
+		end
+		if key == mvCore.rawKeyMapper("End") then
+			disk.eject(mvCore.diskGetSide())
+			os.reboot()
+			break
+		end
+	end
+end
+end
+
+--Do tArgs thing
+local getArgs = tArgs[1]
+if getArgs == "unattended" then
+	install(true)
+else
+	UI()
+	getResponse()
+end
